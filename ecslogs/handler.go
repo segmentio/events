@@ -24,7 +24,7 @@ type Handler struct {
 	Output io.Writer
 }
 
-// Newhandler creates a new handler which writes to output
+// NewHandler creates a new handler which writes to output
 func NewHandler(output io.Writer) *Handler {
 	return &Handler{
 		Output: output,

@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// SourceFoPC returns the file and line given a program counter address.
+// SourceForPC returns the file and line given a program counter address.
 // The file path is in the canonical form for Go programs, starting with
 // the package path.
 func SourceForPC(pc uintptr) (file string, line int) {

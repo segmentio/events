@@ -53,7 +53,7 @@ func (e *Event) Clone() *Event {
 // Args reprsents a list of event arguments.
 type Args []Arg
 
-// Args represents a single event argument.
+// Arg represents a single event argument.
 type Arg struct {
 	Name  string
 	Value interface{}
