@@ -31,7 +31,7 @@ func NewHandler(output io.Writer) *Handler {
 	}
 }
 
-// HandleEvent satsifies the events.Handler interface.
+// HandleEvent satisfies the events.Handler interface.
 func (h *Handler) HandleEvent(e *events.Event) {
 	f := fmtPool.Get().(*formatter)
 	f.buffer.Reset()
