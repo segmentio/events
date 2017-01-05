@@ -44,7 +44,7 @@ func Debug(format string, args ...interface{}) {
 //	events.Log("Hello %:name:!", "Luke", events.Args{
 //		{"from", "Han"},
 //	})
-//
+//	// >>>
 //	// events.Event{
 //	//	Message: "Hello Luke!",
 //	//	Args:    events.Args{{"name", "Luke"}, {"from", "Han"}},
