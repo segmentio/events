@@ -44,12 +44,14 @@ func Debug(format string, args ...interface{}) {
 //	events.Log("Hello %:name:!", "Luke", events.Args{
 //		{"from", "Han"},
 //	})
-//	// >>>
-//	// events.Event{
-//	//	Message: "Hello Luke!",
-//	//	Args:    events.Args{{"name", "Luke"}, {"from", "Han"}},
-//	//	Time:    time.Now(),
-//	// }
+//
+// Which produces an event that looks like this:
+//
+//	events.Event{
+//		Message: "Hello Luke!",
+//		Args:    events.Args{{"name", "Luke"}, {"from", "Han"}},
+//		...
+//	}
 //
 // Logger instances are safe to use concurrently from multiple goroutines.
 type Logger struct {
