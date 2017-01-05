@@ -3,7 +3,6 @@ package text
 import (
 	"fmt"
 	"io"
-	"strconv"
 	"sync"
 	"time"
 
@@ -37,11 +36,8 @@ func NewHandler(prefix string, output io.Writer) *Handler {
 // HandleEvent satisfies the events.Handler interface.
 func (h *Handler) HandleEvent(e *events.Event) {
 	buf := bufferPool.Get().(*buffer)
-
-	if prefix := h.Prefix; len(prefix) != 0 {
-		buf.b = append(buf.b, prefix...)
-		buf.b = append(buf.b, ' ')
-	}
+	buf.b = buf.b[:0]
+	buf.b = append(buf.b, h.Prefix...)
 
 	if fmt := h.TimeFormat; len(fmt) != 0 {
 		loc := h.TimeLocation
@@ -52,35 +48,32 @@ func (h *Handler) HandleEvent(e *events.Event) {
 		buf.b = append(buf.b, " - "...)
 	}
 
-	if e.PC != 0 {
-		file, line := events.SourceForPC(e.PC)
-		buf.b = append(buf.b, file...)
-		buf.b = append(buf.b, ':')
-		buf.b = strconv.AppendUint(buf.b, uint64(line), 10)
+	if len(e.Source) != 0 {
+		buf.b = append(buf.b, e.Source...)
 		buf.b = append(buf.b, " - "...)
 	}
 
 	buf.b = append(buf.b, e.Message...)
 	buf.b = append(buf.b, '\n')
+	hasError := false
 
-	if e.Debug {
-		hasError := false
+	for _, a := range e.Args {
+		if _, ok := a.Value.(error); ok {
+			hasError = true
+		} else if e.Debug {
+			buf.b = append(buf.b, '\t')
+			buf.b = append(buf.b, a.Name...)
+			buf.b = append(buf.b, ':', ' ')
+			fmt.Fprintf(buf, "%v\n", a.Value)
+		}
+	}
+
+	if hasError {
+		fmt.Fprint(buf, "\terrors:\n")
 
 		for _, a := range e.Args {
-			if _, ok := a.Value.(error); ok {
-				hasError = true
-			} else {
-				fmt.Fprintf(buf, "\t%s: %v\n", a.Name, a.Value)
-			}
-		}
-
-		if hasError {
-			fmt.Fprint(buf, "\terrors:\n")
-
-			for _, a := range e.Args {
-				if err, ok := a.Value.(error); ok {
-					fmt.Fprintf(buf, "\t\t- %+v\n", err)
-				}
+			if err, ok := a.Value.(error); ok {
+				fmt.Fprintf(buf, "\t\t- %+v\n", err)
 			}
 		}
 	}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
-	"runtime"
 	"testing"
 	"time"
 
@@ -12,17 +11,14 @@ import (
 )
 
 func TestHandler(t *testing.T) {
-	pc := [2]uintptr{}
-	runtime.Callers(1, pc[:])
-
 	b := &bytes.Buffer{}
-	h := NewHandler("==>", b)
+	h := NewHandler("==> ", b)
 
 	h.HandleEvent(&events.Event{
 		Message: "Hello Luke!",
+		Source:  "github.com/segmentio/events/text/handler_test.go:18",
 		Args:    events.Args{{"name", "Luke"}, {"from", "Han"}, {"error", io.EOF}},
 		Time:    time.Date(2017, 1, 1, 23, 42, 0, 123000000, time.Local),
-		PC:      pc[0],
 		Debug:   true,
 	})
 
@@ -37,15 +33,12 @@ func TestHandler(t *testing.T) {
 }
 
 func BenchmarkHandler(b *testing.B) {
-	pc := [2]uintptr{}
-	runtime.Callers(1, pc[:])
-
 	h := NewHandler("", ioutil.Discard)
 	e := &events.Event{
 		Message: "Hello Luke!",
+		Source:  "github.com/segmentio/events/text/handler_test.go:18",
 		Args:    events.Args{{"name", "Luke"}, {"from", "Han"}},
 		Time:    time.Date(2017, 1, 1, 23, 42, 0, 123000000, time.UTC),
-		PC:      pc[0],
 		Debug:   true,
 	}
 

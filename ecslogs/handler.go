@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -41,19 +40,10 @@ func (h *Handler) HandleEvent(e *events.Event) {
 	f.time = e.Time
 	f.message = e.Message
 	f.data.args = e.Args
-	f.info.Source = ""
+	f.info.Source = e.Source
 
 	if e.Debug {
 		f.level = "DEBUG"
-	}
-
-	if e.PC != 0 {
-		f.source.Reset()
-		file, line := events.SourceForPC(e.PC)
-		f.source.b = append(f.source.b, file...)
-		f.source.b = append(f.source.b, ':')
-		f.source.b = strconv.AppendUint(f.source.b, uint64(line), 10)
-		f.info.Source = stringNoCopy(f.source.b)
 	}
 
 	for _, a := range e.Args {
@@ -67,6 +57,7 @@ func (h *Handler) HandleEvent(e *events.Event) {
 	f.buffer.WriteByte('\n')
 	h.Output.Write(f.buffer.b)
 
+	f.info.Source = ""
 	f.info.Errors = f.info.Errors[:0]
 	fmtPool.Put(f)
 }

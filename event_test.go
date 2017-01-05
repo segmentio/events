@@ -10,6 +10,7 @@ func TestEvent(t *testing.T) {
 	t.Run("Clone", func(t *testing.T) {
 		e1 := &Event{
 			Message: "Hello World",
+			Source:  "file.go:42",
 			Args:    Args{{"hello", "world"}},
 			Time:    time.Now(),
 		}

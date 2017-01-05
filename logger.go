@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -13,9 +14,9 @@ import (
 // DefaultLogger is the default logger used by the Log function. This may be
 // overwritten by the program to change the default route for log events.
 var DefaultLogger = Logger{
-	Handler:     Discard,
-	EnablePC:    true,
-	EnableDebug: true,
+	Handler:      Discard,
+	EnableSource: true,
+	EnableDebug:  true,
 }
 
 // Log emits a log event to the default logger.
@@ -68,12 +69,12 @@ type Logger struct {
 	// methods.
 	CallDepth int
 
-	// EnablePC controls whether the logger should report the program counter
+	// EnableSource controls whether the logger should report the program counter
 	// address of its caller on the events it produces.
 	// This has a significant impact on the performance of the logger's Log and
 	// Debug method but also provides very important insights, be mindful about
 	// turning it on or off.
-	EnablePC bool
+	EnableSource bool
 
 	// EnableDebug controls whether calls to Debug produces events.
 	EnableDebug bool
@@ -87,10 +88,17 @@ func (l *Logger) Log(format string, args ...interface{}) {
 func (l *Logger) log(depth int, format string, args ...interface{}) {
 	var s = logPool.Get().(*logState)
 	var a Args
-	var pc [1]uintptr
 
-	if l.EnablePC {
+	if l.EnableSource {
+		var pc [1]uintptr
 		runtime.Callers(l.CallDepth+depth+2, pc[:])
+
+		if pc[0] != 0 {
+			file, line := SourceForPC(pc[0])
+			s.src = append(s.src, file...)
+			s.src = append(s.src, ':')
+			s.src = strconv.AppendUint(s.src, uint64(line), 10)
+		}
 	}
 
 	if n := len(args); n != 0 {
@@ -99,28 +107,26 @@ func (l *Logger) log(depth int, format string, args ...interface{}) {
 		}
 	}
 
-	s.Args = append(s.Args, l.Args...)
-	s.fmt, s.Args = appendFormat(s.fmt, s.Args, format, args)
-	s.Args = append(s.Args, a...)
+	s.e.Args = append(s.e.Args, l.Args...)
+	s.fmt, s.e.Args = appendFormat(s.fmt, s.e.Args, format, args)
+	s.e.Args = append(s.e.Args, a...)
 
 	fmt.Fprintf(s, string(s.fmt), args...)
 
-	if len(s.buf) != 0 {
-		s.Message = *(*string)(unsafe.Pointer(&reflect.StringHeader{
-			Data: uintptr(unsafe.Pointer(&s.buf[0])),
-			Len:  len(s.buf),
-		}))
-	}
+	s.e.Message = stringNoCopy(s.msg)
+	s.e.Source = stringNoCopy(s.src)
+	s.e.Debug = l.EnableDebug
+	s.e.Time = time.Now()
 
-	s.Debug = l.EnableDebug
-	s.PC = pc[0]
-	s.Time = time.Now()
-	l.Handler.HandleEvent(&s.Event)
+	l.Handler.HandleEvent(&s.e)
 
-	s.Message = ""
-	s.Args = s.Args[:0]
+	s.e.Message = ""
+	s.e.Source = ""
+	s.e.Args = s.e.Args[:0]
+
 	s.fmt = s.fmt[:0]
-	s.buf = s.buf[:0]
+	s.msg = s.msg[:0]
+	s.src = s.src[:0]
 
 	logPool.Put(s)
 	return
@@ -151,21 +157,23 @@ func (l *Logger) With(args Args) *Logger {
 	}
 
 	return &Logger{
-		Args:        newArgs,
-		Handler:     l.Handler,
-		EnableDebug: l.EnableDebug,
+		Args:         newArgs,
+		Handler:      l.Handler,
+		EnableSource: l.EnableSource,
+		EnableDebug:  l.EnableDebug,
 	}
 }
 
 // logState is used to build events produced by Logger instances.
 type logState struct {
-	Event
+	e   Event
 	fmt []byte
-	buf []byte
+	msg []byte
+	src []byte
 }
 
 func (s *logState) Write(b []byte) (n int, err error) {
-	s.buf = append(s.buf, b...)
+	s.msg = append(s.msg, b...)
 	n = len(b)
 	return
 }
@@ -173,11 +181,10 @@ func (s *logState) Write(b []byte) (n int, err error) {
 var logPool = sync.Pool{
 	New: func() interface{} {
 		return &logState{
-			Event: Event{
-				Args: make(Args, 0, 8),
-			},
+			e:   Event{Args: make(Args, 0, 8)},
 			fmt: make([]byte, 0, 512),
-			buf: make([]byte, 0, 512),
+			msg: make([]byte, 0, 512),
+			src: make([]byte, 0, 512),
 		}
 	},
 }
@@ -246,3 +253,13 @@ var (
 	// Prevents Go from doing a memory allocation when there is a missing argument.
 	missing interface{} = "MISSING"
 )
+
+func stringNoCopy(b []byte) string {
+	if len(b) == 0 {
+		return ""
+	}
+	return *(*string)(unsafe.Pointer(&reflect.StringHeader{
+		Data: uintptr(unsafe.Pointer(&b[0])),
+		Len:  len(b),
+	}))
+}

@@ -119,6 +119,7 @@ func TestLogger(t *testing.T) {
 		Handler: HandlerFunc(func(e *Event) {
 			events = append(events, e.Clone())
 		}),
+		EnableSource: true,
 	}
 
 	for _, test := range loggerTests {
@@ -203,8 +204,8 @@ func checkEvents(t *testing.T, e1 []*Event, e2 []*Event) {
 	for i := range e1 {
 		v1 := *e1[i]
 		v2 := *e2[i]
-		v1.PC = 0
-		v2.PC = 0
+		v1.Source = ""
+		v2.Source = ""
 		v1.Time = time.Time{}
 		v2.Time = time.Time{}
 		if !reflect.DeepEqual(v1, v2) {

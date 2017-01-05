@@ -8,6 +8,9 @@ type Event struct {
 	// Message carries information about the event in a human-readable format.
 	Message string
 
+	// Source represents the location where this event was generated from.
+	Source string
+
 	// Args is the list of arguments of the event, it is intended to give
 	// context about the information carried by the even in a format that can
 	// be processed by a program.
@@ -15,11 +18,6 @@ type Event struct {
 
 	// Time is the time at which the event was generated.
 	Time time.Time
-
-	// PC is the program counter address of the function that generated the
-	// event. It may be zero to indicated that the information was not or could
-	// not be retrieved.
-	PC uintptr
 
 	// Debug is set to true if this is a debugging event.
 	Debug bool
@@ -30,6 +28,7 @@ type Event struct {
 func (e *Event) Clone() *Event {
 	var a Args
 	var m []byte
+	var s []byte
 
 	if n := len(e.Args); n != 0 {
 		a = make(Args, n)
@@ -41,11 +40,16 @@ func (e *Event) Clone() *Event {
 		copy(m, e.Message)
 	}
 
+	if n := len(e.Source); n != 0 {
+		s = make([]byte, n)
+		copy(s, e.Source)
+	}
+
 	return &Event{
 		Message: string(m),
+		Source:  string(s),
 		Args:    a,
 		Time:    e.Time,
-		PC:      e.PC,
 		Debug:   e.Debug,
 	}
 }
