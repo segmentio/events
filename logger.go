@@ -39,13 +39,12 @@ func Debug(format string, args ...interface{}) {
 // argument, it doesn't use it to format the message and instead simply append
 // it to the event's argument list.
 //
-// Here's an example:
+// Here's an example with the defalut logger:
 //
-//	// Use the default logger to send an event.
 //	events.Log("Hello %:name:!", "Luke", events.Args{
 //		{"from", "Han"},
 //	})
-//	// Produces this event:
+//
 //	// events.Event{
 //	//	Message: "Hello Luke!",
 //	//	Args:    events.Args{{"name", "Luke"}, {"from", "Han"}},
