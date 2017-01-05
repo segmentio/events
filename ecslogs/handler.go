@@ -110,31 +110,35 @@ type eventData struct {
 }
 
 func (data *eventData) EncodeValue(e objconv.Encoder) error {
-	n := 0
-	i := 0
-
-	for _, a := range data.args {
-		if _, ok := a.Value.(error); !ok {
-			n++
+	n := len(data.args)
+	i := data.next(0)
+	return e.EncodeMap(-1, func(k objconv.Encoder, v objconv.Encoder) (err error) {
+		if i != n {
+			if err = k.EncodeString(data.args[i].Name); err != nil {
+				return
+			}
+			if err = v.Encode(data.args[i].Value); err != nil {
+				return
+			}
+			i = data.next(i + 1)
 		}
-	}
+		if i == n {
+			err = objconv.End
+		}
+		return
+	})
+}
 
-	return e.EncodeMap(n, func(k objconv.Encoder, v objconv.Encoder) (err error) {
-		for _, a := range data.args[i:] {
+func (data *eventData) next(i int) int {
+	for _, a := range data.args[i:] {
+		if len(a.Name) != 0 {
 			if _, ok := a.Value.(error); !ok {
 				break
 			}
-			i++
-		}
-		if err = k.EncodeString(data.args[i].Name); err != nil {
-			return
-		}
-		if err = v.Encode(data.args[i].Value); err != nil {
-			return
 		}
 		i++
-		return
-	})
+	}
+	return i
 }
 
 type stackTracer interface {
