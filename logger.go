@@ -89,7 +89,7 @@ func (l *Logger) log(depth int, format string, args ...interface{}) {
 	var pc [1]uintptr
 
 	if l.EnablePC {
-		runtime.Callers(depth+2, pc[:])
+		runtime.Callers(l.CallDepth+depth+2, pc[:])
 	}
 
 	if n := len(args); n != 0 {

@@ -3,6 +3,7 @@ package text
 import (
 	"fmt"
 	"io"
+	"strconv"
 	"sync"
 	"time"
 
@@ -48,7 +49,15 @@ func (h *Handler) HandleEvent(e *events.Event) {
 			loc = time.Local
 		}
 		buf.b = e.Time.In(loc).AppendFormat(buf.b, fmt)
-		buf.b = append(buf.b, ' ')
+		buf.b = append(buf.b, " - "...)
+	}
+
+	if e.PC != 0 {
+		file, line := events.SourceForPC(e.PC)
+		buf.b = append(buf.b, file...)
+		buf.b = append(buf.b, ':')
+		buf.b = strconv.AppendUint(buf.b, uint64(line), 10)
+		buf.b = append(buf.b, " - "...)
 	}
 
 	buf.b = append(buf.b, e.Message...)
