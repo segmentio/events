@@ -73,3 +73,23 @@ func (args Args) Get(name string) (v interface{}, ok bool) {
 	}
 	return
 }
+
+// Map converts an argument list to a map representation. In cases where the
+// list contains multiple arguments with the same name the value of the last
+// one will be seen in the map.
+func (args Args) Map() map[string]interface{} {
+	m := make(map[string]interface{})
+	for _, arg := range args {
+		m[arg.Name] = arg.Value
+	}
+	return m
+}
+
+// A constructs an argument list from a map.
+func A(m map[string]interface{}) Args {
+	args := make(Args, 0, len(m))
+	for name, value := range m {
+		args = append(args, Arg{name, value})
+	}
+	return args
+}

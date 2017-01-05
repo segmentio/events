@@ -28,10 +28,7 @@ func TestEvent(t *testing.T) {
 
 func TestArgs(t *testing.T) {
 	t.Run("Get", func(t *testing.T) {
-		args := Args{
-			{"hello", "world"},
-			{"answer", 42},
-		}
+		args := Args{{"hello", "world"}, {"answer", 42}}
 
 		if v, ok := args.Get("answer"); !ok {
 			t.Error("expected answer but got nothing")
@@ -41,6 +38,15 @@ func TestArgs(t *testing.T) {
 
 		if v, ok := args.Get("question"); ok {
 			t.Error("expected no question but got", v)
+		}
+	})
+	t.Run("Map", func(t *testing.T) {
+		a1 := Args{{"hello", "world"}, {"answer", 42}}
+		m1 := a1.Map()
+		a2 := A(m1)
+
+		if !reflect.DeepEqual(a1, a2) {
+			t.Error("%#v != %#v", a1, a2)
 		}
 	})
 }
