@@ -21,13 +21,22 @@ func (f HandlerFunc) HandleEvent(e *Event) {
 	f(e)
 }
 
-// MultiHandler is an event handler that fans out events it receives to a list
-// of handlers.
-type MultiHandler []Handler
+// MultiHandler returns a new Handler which broadcasts the events it receives
+// to its list of handlers.
+func MultiHandler(handlers ...Handler) Handler {
+	c := make([]Handler, len(handlers))
+	copy(c, handlers)
+	return &multiHandler{
+		handlers: c,
+	}
+}
 
-// HandleEvent broadcasts e to all handlers of m.
-func (m MultiHandler) HandleEvent(e *Event) {
-	for _, h := range m {
+type multiHandler struct {
+	handlers []Handler
+}
+
+func (m *multiHandler) HandleEvent(e *Event) {
+	for _, h := range m.handlers {
 		h.HandleEvent(e)
 	}
 }
