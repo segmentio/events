@@ -1,9 +1,7 @@
 package httpevents
 
 import (
-	"net"
 	"net/http"
-	"sync"
 
 	"github.com/segmentio/events"
 )
@@ -19,20 +17,14 @@ func NewHandler(logger *events.Logger, handler http.Handler) http.Handler {
 			ResponseWriter: res,
 			// We capture all the values we need from req in case the object
 			// gets modified by the handler.
-			logger:  logger,
-			address: req.RemoteAddr,
-			method:  req.Method,
-			host:    req.Host,
-			path:    req.URL.Path,
-			query:   req.URL.RawQuery,
-			agent:   req.UserAgent(),
-		}
-
-		// Strip out the port number from the client address, there's little
-		// value in knowing which port the request came from since they are most
-		// likely chosen randomly by the OS.
-		if addr, _, _ := net.SplitHostPort(w.address); len(addr) != 0 {
-			w.address = addr
+			logger:   logger,
+			address:  req.RemoteAddr,
+			method:   req.Method,
+			host:     req.Host,
+			path:     req.URL.Path,
+			query:    req.URL.RawQuery,
+			fragment: req.URL.Fragment,
+			agent:    req.UserAgent(),
 		}
 
 		// If the handler panics we want to make sure we report the issue in the
@@ -58,24 +50,25 @@ func NewHandler(logger *events.Logger, handler http.Handler) http.Handler {
 
 type responseWriter struct {
 	http.ResponseWriter
-	logger  *events.Logger
-	address string
-	method  string
-	host    string
-	path    string
-	query   string
-	agent   string
+	logger   *events.Logger
+	address  string
+	method   string
+	host     string
+	path     string
+	query    string
+	fragment string
+	agent    string
 }
 
 func (w *responseWriter) WriteHeader(status int) {
 	if w.logger != nil {
-		// 127.0.0.1:43243 -
-		w.logger.Log("%:address:s - %:host:s - %:method:s %:path:s?%:query:s - %:status:d %s - %:agent:s",
+		w.logger.Log("%:address:s - %:host:s - %:method:s %:path:s?%:query:s#%:fragment:s - %:status:d %s - %:agent:s",
 			w.address,
 			w.host,
 			w.method,
 			w.path,
 			w.query,
+			w.fragment,
 			status,
 			http.StatusText(status),
 			w.agent,
@@ -83,8 +76,4 @@ func (w *responseWriter) WriteHeader(status int) {
 		w.logger = nil
 	}
 	w.ResponseWriter.WriteHeader(status)
-}
-
-var responseWriterPool = sync.Pool{
-	New: func() interface{} { return &responseWriter{} },
 }
