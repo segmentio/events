@@ -66,24 +66,24 @@ type responseWriter struct {
 
 func (w *responseWriter) WriteHeader(status int) {
 	if w.logger != nil {
-		var a [128]byte
-		var b = append(a[:0], "%{address}s - %{host}s - %{method}s %{path}s"...)
+		var buf [128]byte
+		var fmt = append(buf[:0], "%{address}s - %{host}s - %{method}s %{path}s"...)
 
 		// Don't output a '?' character when the query string is empty, this is
 		// a more natural way of reading URLs.
 		if len(w.query) != 0 {
-			b = append(b, '?')
+			fmt = append(fmt, '?')
 		}
-		b = append(b, "%{query}s"...)
+		fmt = append(fmt, "%{query}s"...)
 
 		// Same than with the query string, don't output a '#' character when
 		// there is no fragment.
 		if len(w.fragment) != 0 {
-			b = append(b, '#')
+			fmt = append(fmt, '#')
 		}
-		b = append(b, "%{fragment}s - %{status}d %s - %{agent}q"...)
+		fmt = append(fmt, "%{fragment}s - %{status}d %s - %{agent}q"...)
 
-		w.logger.Log(string(b),
+		w.logger.Log(string(fmt),
 			w.address,
 			w.host,
 			w.method,
