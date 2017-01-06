@@ -13,11 +13,7 @@ import (
 
 // DefaultLogger is the default logger used by the Log function. This may be
 // overwritten by the program to change the default route for log events.
-var DefaultLogger = Logger{
-	Handler:      Discard,
-	EnableSource: true,
-	EnableDebug:  true,
-}
+var DefaultLogger = NewLogger(Discard)
 
 // Log emits a log event to the default logger.
 func Log(format string, args ...interface{}) {
@@ -78,6 +74,15 @@ type Logger struct {
 
 	// EnableDebug controls whether calls to Debug produces events.
 	EnableDebug bool
+}
+
+// NewLogger allocates and returns a new logger which sends events to handler.
+func NewLogger(handler Handler) *Logger {
+	return &Logger{
+		Handler:      handler,
+		EnableSource: true,
+		EnableDebug:  true,
+	}
 }
 
 // Log formats an event and sends it to the logger's handler.
