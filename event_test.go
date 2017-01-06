@@ -42,8 +42,11 @@ func TestArgs(t *testing.T) {
 	})
 	t.Run("Map", func(t *testing.T) {
 		a1 := Args{{"hello", "world"}, {"answer", 42}}
+		SortArgs(a1)
+
 		m1 := a1.Map()
 		a2 := A(m1)
+		SortArgs(a2)
 
 		if !reflect.DeepEqual(a1, a2) {
 			t.Error("%#v != %#v", a1, a2)
