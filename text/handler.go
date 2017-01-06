@@ -60,7 +60,7 @@ func (h *Handler) HandleEvent(e *events.Event) {
 	for _, a := range e.Args {
 		if _, ok := a.Value.(error); ok {
 			hasError = true
-		} else if e.Debug && len(a.Name) != 0 {
+		} else if e.Debug {
 			buf.b = append(buf.b, '\t')
 			buf.b = append(buf.b, a.Name...)
 			buf.b = append(buf.b, ':', ' ')

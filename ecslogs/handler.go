@@ -131,10 +131,8 @@ func (data *eventData) EncodeValue(e objconv.Encoder) error {
 
 func (data *eventData) next(i int) int {
 	for _, a := range data.args[i:] {
-		if len(a.Name) != 0 {
-			if _, ok := a.Value.(error); !ok {
-				break
-			}
+		if _, ok := a.Value.(error); !ok {
+			break
 		}
 		i++
 	}

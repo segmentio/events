@@ -17,7 +17,7 @@ var DefaultLogger = NewLogger(Discard)
 
 // Log emits a log event to the default logger.
 func Log(format string, args ...interface{}) {
-	DefaultLogger.log(1, format, args...)
+	DefaultLogger.log(1, false, format, args...)
 }
 
 // Debug emits a debug event to the default logger.
@@ -87,10 +87,10 @@ func NewLogger(handler Handler) *Logger {
 
 // Log formats an event and sends it to the logger's handler.
 func (l *Logger) Log(format string, args ...interface{}) {
-	l.log(1, format, args...)
+	l.log(1, false, format, args...)
 }
 
-func (l *Logger) log(depth int, format string, args ...interface{}) {
+func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) {
 	var s = logPool.Get().(*logState)
 	var a Args
 
@@ -120,7 +120,7 @@ func (l *Logger) log(depth int, format string, args ...interface{}) {
 
 	s.e.Message = stringNoCopy(s.msg)
 	s.e.Source = stringNoCopy(s.src)
-	s.e.Debug = l.EnableDebug
+	s.e.Debug = debug
 	s.e.Time = time.Now()
 
 	l.Handler.HandleEvent(&s.e)
@@ -146,7 +146,7 @@ func (l *Logger) Debug(format string, args ...interface{}) {
 
 func (l *Logger) debug(depth int, format string, args ...interface{}) {
 	if l.EnableDebug {
-		l.log(depth+1, format, args...)
+		l.log(depth+1, true, format, args...)
 	}
 }
 
@@ -248,7 +248,9 @@ func appendFormat(dstFmt []byte, dstArgs Args, srcFmt string, srcArgs []interfac
 			val, srcArgs = srcArgs[0], srcArgs[1:]
 		}
 
-		dstArgs = append(dstArgs, Arg{key, val})
+		if len(key) != 0 {
+			dstArgs = append(dstArgs, Arg{key, val})
+		}
 	}
 
 	return dstFmt, dstArgs

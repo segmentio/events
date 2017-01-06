@@ -28,7 +28,7 @@ var appendFormatTests = []struct {
 		srcFmt:  "Hello %s!",
 		srcArgs: []interface{}{"Luke"},
 		dstFmt:  "Hello %s!",
-		dstArgs: Args{{"", "Luke"}},
+		dstArgs: nil,
 	},
 	{ // simple format
 		srcFmt:  "Hello %:name:s!",
@@ -52,13 +52,13 @@ var appendFormatTests = []struct {
 		srcFmt:  "%:",
 		srcArgs: nil,
 		dstFmt:  "%:",
-		dstArgs: Args{{"", "MISSING"}},
+		dstArgs: nil,
 	},
 	{ // unclosed ':'
 		srcFmt:  "%:name",
 		srcArgs: nil,
 		dstFmt:  "%:name",
-		dstArgs: Args{{"", "MISSING"}},
+		dstArgs: nil,
 	},
 	{ // missing arg
 		srcFmt:  "Hello %:name:s",
