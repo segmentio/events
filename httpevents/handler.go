@@ -1,6 +1,7 @@
 package httpevents
 
 import (
+	"net"
 	"net/http"
 
 	"github.com/segmentio/events"
@@ -17,12 +18,19 @@ func NewHandler(logger *events.Logger, handler http.Handler) http.Handler {
 		logger = events.DefaultLogger
 	}
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		var laddr string
+
+		if value, ok := req.Context().Value(http.LocalAddrContextKey).(net.Addr); ok {
+			laddr = value.String()
+		}
+
 		w := &responseWriter{
 			ResponseWriter: res,
 			// We capture all the values we need from req in case the object
 			// gets modified by the handler.
 			logger:   logger,
-			address:  req.RemoteAddr,
+			laddr:    laddr,
+			raddr:    req.RemoteAddr,
 			method:   req.Method,
 			host:     req.Host,
 			path:     req.URL.Path,
@@ -55,7 +63,8 @@ func NewHandler(logger *events.Logger, handler http.Handler) http.Handler {
 type responseWriter struct {
 	http.ResponseWriter
 	logger   *events.Logger
-	address  string
+	laddr    string
+	raddr    string
 	method   string
 	host     string
 	path     string
@@ -67,7 +76,7 @@ type responseWriter struct {
 func (w *responseWriter) WriteHeader(status int) {
 	if w.logger != nil {
 		var buf [128]byte
-		var fmt = append(buf[:0], "%{address}s - %{host}s - %{method}s %{path}s"...)
+		var fmt = append(buf[:0], "%{local_address}s->%{remote_address}s - %{host}s - %{method}s %{path}s"...)
 
 		// Don't output a '?' character when the query string is empty, this is
 		// a more natural way of reading URLs.
@@ -84,7 +93,8 @@ func (w *responseWriter) WriteHeader(status int) {
 		fmt = append(fmt, "%{fragment}s - %{status}d %s - %{agent}q"...)
 
 		w.logger.Log(string(fmt),
-			w.address,
+			w.laddr,
+			w.raddr,
 			w.host,
 			w.method,
 			w.path,
