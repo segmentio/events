@@ -3,6 +3,7 @@ package netevents
 import (
 	"context"
 	"net"
+	"runtime"
 
 	"github.com/segmentio/events"
 )
@@ -41,6 +42,9 @@ func dialContextFunc(depth int, logger *events.Logger, dial func(context.Context
 			c := &connLogger{Conn: conn, Logger: logger, typ: "client"}
 			c.open(depth + 1)
 			conn = c
+			// Ensure the connection emits a close event if it's closed by the
+			// garbage collector.
+			runtime.SetFinalizer(c, func(c *connLogger) { c.close(0) })
 		}
 		return
 	}
