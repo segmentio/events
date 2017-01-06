@@ -223,14 +223,14 @@ func appendFormat(dstFmt []byte, dstArgs Args, srcFmt string, srcArgs []interfac
 				}
 				continue
 
-			case ':': // extract the argument name from the format string
+			case '{': // extract the argument name from the format string
 				if i++; i == n {
-					dstFmt = append(dstFmt, ':')
+					dstFmt = append(dstFmt, '{')
 					i = n
 					break fmtLoop
 				}
 
-				j := strings.IndexByte(srcFmt[i:], ':')
+				j := strings.IndexByte(srcFmt[i:], '}')
 				if j < 0 {
 					dstFmt = append(dstFmt, srcFmt[i-1:]...)
 					i = n

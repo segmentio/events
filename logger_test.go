@@ -31,37 +31,37 @@ var appendFormatTests = []struct {
 		dstArgs: nil,
 	},
 	{ // simple format
-		srcFmt:  "Hello %:name:s!",
+		srcFmt:  "Hello %{name}s!",
 		srcArgs: []interface{}{"Luke"},
 		dstFmt:  "Hello %s!",
 		dstArgs: Args{{"name", "Luke"}},
 	},
 	{ // complex format
-		srcFmt:  "{ %:first-name:q: %:last-name:#v }",
+		srcFmt:  "{ %{first-name}q: %{last-name}#v }",
 		srcArgs: []interface{}{"Luke", "Skywalker"},
 		dstFmt:  "{ %q: %#v }",
 		dstArgs: Args{{"first-name", "Luke"}, {"last-name", "Skywalker"}},
 	},
 	{ // escaped format
-		srcFmt:  "%%:",
+		srcFmt:  "%%{",
 		srcArgs: nil,
-		dstFmt:  "%%:",
+		dstFmt:  "%%{",
 		dstArgs: nil,
 	},
 	{ // trailing ':'
-		srcFmt:  "%:",
+		srcFmt:  "%{",
 		srcArgs: nil,
-		dstFmt:  "%:",
+		dstFmt:  "%{",
 		dstArgs: nil,
 	},
 	{ // unclosed ':'
-		srcFmt:  "%:name",
+		srcFmt:  "%{name",
 		srcArgs: nil,
-		dstFmt:  "%:name",
+		dstFmt:  "%{name",
 		dstArgs: nil,
 	},
 	{ // missing arg
-		srcFmt:  "Hello %:name:s",
+		srcFmt:  "Hello %{name}s",
 		srcArgs: nil,
 		dstFmt:  "Hello %s",
 		dstArgs: Args{{"name", "MISSING"}},
@@ -104,7 +104,7 @@ var loggerTests = []struct {
 }{
 	{ /* all zero-values */ },
 	{
-		format: "Hello %:name:s!",
+		format: "Hello %{name}s!",
 		args:   []interface{}{"Luke", Args{{"from", "Han"}}},
 		event: Event{
 			Message: "Hello Luke!",
