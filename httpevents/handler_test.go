@@ -39,7 +39,7 @@ func TestHandler(t *testing.T) {
 	e.Time = time.Time{}
 
 	if !reflect.DeepEqual(e, events.Event{
-		Message: "127.0.0.1 - www.github.com - GET /hello?answer=42#universe - 202 Accepted - httpevents",
+		Message: `127.0.0.1 - www.github.com - GET /hello?answer=42#universe - 202 Accepted - "httpevents"`,
 		Args: events.Args{
 			{"address", "127.0.0.1"},
 			{"host", "www.github.com"},
@@ -87,7 +87,7 @@ func TestHandlerPanic(t *testing.T) {
 	e.Time = time.Time{}
 
 	if !reflect.DeepEqual(e, events.Event{
-		Message: "127.0.0.1 - www.github.com - POST /?# - 500 Internal Server Error - httpevents",
+		Message: `127.0.0.1 - www.github.com - POST / - 500 Internal Server Error - "httpevents"`,
 		Args: events.Args{
 			{"address", "127.0.0.1"},
 			{"host", "www.github.com"},

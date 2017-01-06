@@ -8,6 +8,10 @@ import (
 
 // NewHandler wraps the HTTP handler with and access logger which generates
 // events for all incoming requests using logger.
+//
+// Panics from handler are intercepted and trigger a 500 response if no response
+// header was sent yet. The panic is not slienced tho and is propagated to the
+// parent handler.
 func NewHandler(logger *events.Logger, handler http.Handler) http.Handler {
 	if logger == nil {
 		logger = events.DefaultLogger
@@ -62,7 +66,24 @@ type responseWriter struct {
 
 func (w *responseWriter) WriteHeader(status int) {
 	if w.logger != nil {
-		w.logger.Log("%:address:s - %:host:s - %:method:s %:path:s?%:query:s#%:fragment:s - %:status:d %s - %:agent:s",
+		var a [128]byte
+		var b = append(a[:0], "%{address}s - %{host}s - %{method}s %{path}s"...)
+
+		// Don't output a '?' character when the query string is empty, this is
+		// a more natural way of reading URLs.
+		if len(w.query) != 0 {
+			b = append(b, '?')
+		}
+		b = append(b, "%{query}s"...)
+
+		// Same than with the query string, don't output a '#' character when
+		// there is no fragment.
+		if len(w.fragment) != 0 {
+			b = append(b, '#')
+		}
+		b = append(b, "%{fragment}s - %{status}d %s - %{agent}q"...)
+
+		w.logger.Log(string(b),
 			w.address,
 			w.host,
 			w.method,
