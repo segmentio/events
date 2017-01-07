@@ -6,8 +6,8 @@ import (
 	"github.com/segmentio/events"
 )
 
-// NewHandler wraps the HTTP handler with and access logger which generates
-// events for all incoming requests using logger.
+// NewHandler wraps the HTTP handler and returns a new handler which logs all
+// requests to logger.
 //
 // Panics from handler are intercepted and trigger a 500 response if no response
 // header was sent yet. The panic is not slienced tho and is propagated to the
