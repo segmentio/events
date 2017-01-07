@@ -21,6 +21,10 @@ type request struct {
 func makeRequest(req *http.Request, laddr string) request {
 	var raddr string
 
+	if len(laddr) == 0 {
+		laddr = "???"
+	}
+
 	if raddr = req.RemoteAddr; len(raddr) == 0 {
 		raddr = "???"
 	}
