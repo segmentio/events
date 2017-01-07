@@ -29,7 +29,7 @@ func NewHandler(logger *events.Logger, handler http.Handler) http.Handler {
 			// We capture all the values we need from req in case the object
 			// gets modified by the handler.
 			logger:  logger,
-			request: makeRequest(req),
+			request: makeRequest(req, laddr),
 		}
 
 		// If the handler panics we want to make sure we report the issue in the

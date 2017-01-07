@@ -7,7 +7,8 @@ import (
 )
 
 type request struct {
-	address  string
+	laddr    string
+	raddr    string
 	method   string
 	host     string
 	path     string
@@ -17,9 +18,18 @@ type request struct {
 	status   int
 }
 
-func makeRequest(req *http.Request) request {
+func makeRequest(req *http.Request, laddr string) request {
+	var raddr string
+
+	if len(req.RemoteAddr) == 0 {
+		raddr = req.URL.Host
+	} else {
+		raddr = req.RemoteAddr
+	}
+
 	return request{
-		address:  req.RemoteAddr,
+		laddr:    laddr,
+		raddr:    raddr,
 		method:   req.Method,
 		host:     req.Host,
 		path:     req.URL.Path,
@@ -30,12 +40,30 @@ func makeRequest(req *http.Request) request {
 }
 
 func (r *request) log(logger *events.Logger, depth int) {
-	var l = *logger
-	var b [128]byte
+	var buf [128]byte
+	var fmt = append(buf[:0], "%{local_address}s->%{remote_address}s - %{host}s - %{method}s %{path}s"...)
 
-	l.CallDepth = depth + 1
-	l.Log(string(r.appendLogFormat(b[:0])),
-		r.address,
+	// Don't output a '?' character when the query string is empty, this is
+	// a more natural way of reading URLs.
+	if len(r.query) != 0 {
+		fmt = append(fmt, '?')
+	}
+	fmt = append(fmt, "%{query}s"...)
+
+	// Same than with the query string, don't output a '#' character when
+	// there is no fragment.
+	if len(r.fragment) != 0 {
+		fmt = append(fmt, '#')
+	}
+	fmt = append(fmt, "%{fragment}s - %{status}d %s - %{agent}q"...)
+
+	// Adjust the call depth so we can track the caller of the handler or the
+	// transport outside of the httpevents package.
+	l := *logger
+	l.CallDepth += depth + 1
+	l.Log(string(fmt),
+		r.laddr,
+		r.raddr,
 		r.host,
 		r.method,
 		r.path,
@@ -45,22 +73,4 @@ func (r *request) log(logger *events.Logger, depth int) {
 		http.StatusText(r.status),
 		r.agent,
 	)
-}
-
-func (r *request) appendLogFormat(b []byte) []byte {
-	b = append(b, "%{address}s - %{host}s - %{method}s %{path}s"...)
-
-	// Don't output a '?' character when the query string is empty, this is
-	// a more natural way of reading URLs.
-	if len(r.query) != 0 {
-		b = append(b, '?')
-	}
-	b = append(b, "%{query}s"...)
-
-	// Same than with the query string, don't output a '#' character when
-	// there is no fragment.
-	if len(r.fragment) != 0 {
-		b = append(b, '#')
-	}
-	return append(b, "%{fragment}s - %{status}d %s - %{agent}q"...)
 }
