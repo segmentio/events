@@ -52,6 +52,19 @@ the needs of most programs. The `Log` and `Debug` functions support fmt-style
 formatting but augment the syntax with features that make it simpler to generate
 meaningful events. Refer to the package's documentation to learn more about it.
 
+### Compatibility with the standard library
+
+The standard `log` package doesn't give much flexibility when it comes to its
+logger type. It is a concrete type and there is no `Logger` interface which
+would make it easy to plugin different implementations in packages that need to
+log events. Unfortunately many of these packages have hard dependencies on the
+standard logger, making it hard to capture their events and produce them in
+different formats.  
+However, the `events/log` package is a shim between the standard `log` package,
+and a stream of events. It exposes an API compatible with the standard library,
+and automatically configures the `log` package to reroute the messages it emits
+as events to the default logger.
+
 ## Handlers
 
 Event handlers are the abstraction layer that allows to connect event sources to
