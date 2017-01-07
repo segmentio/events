@@ -28,15 +28,8 @@ func NewHandler(logger *events.Logger, handler http.Handler) http.Handler {
 			ResponseWriter: res,
 			// We capture all the values we need from req in case the object
 			// gets modified by the handler.
-			logger:   logger,
-			laddr:    laddr,
-			raddr:    req.RemoteAddr,
-			method:   req.Method,
-			host:     req.Host,
-			path:     req.URL.Path,
-			query:    req.URL.RawQuery,
-			fragment: req.URL.Fragment,
-			agent:    req.UserAgent(),
+			logger:  logger,
+			request: makeRequest(req, laddr),
 		}
 
 		// If the handler panics we want to make sure we report the issue in the
@@ -62,49 +55,15 @@ func NewHandler(logger *events.Logger, handler http.Handler) http.Handler {
 
 type responseWriter struct {
 	http.ResponseWriter
-	logger   *events.Logger
-	laddr    string
-	raddr    string
-	method   string
-	host     string
-	path     string
-	query    string
-	fragment string
-	agent    string
+	logger *events.Logger
+	request
 }
 
 func (w *responseWriter) WriteHeader(status int) {
-	if w.logger != nil {
-		var buf [128]byte
-		var fmt = append(buf[:0], "%{local_address}s->%{remote_address}s - %{host}s - %{method}s %{path}s"...)
-
-		// Don't output a '?' character when the query string is empty, this is
-		// a more natural way of reading URLs.
-		if len(w.query) != 0 {
-			fmt = append(fmt, '?')
-		}
-		fmt = append(fmt, "%{query}s"...)
-
-		// Same than with the query string, don't output a '#' character when
-		// there is no fragment.
-		if len(w.fragment) != 0 {
-			fmt = append(fmt, '#')
-		}
-		fmt = append(fmt, "%{fragment}s - %{status}d %s - %{agent}q"...)
-
-		w.logger.Log(string(fmt),
-			w.laddr,
-			w.raddr,
-			w.host,
-			w.method,
-			w.path,
-			w.query,
-			w.fragment,
-			status,
-			http.StatusText(status),
-			w.agent,
-		)
+	if logger := w.logger; logger != nil {
 		w.logger = nil
+		w.status = status
+		w.log(logger, 1)
 	}
 	w.ResponseWriter.WriteHeader(status)
 }
