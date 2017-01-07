@@ -31,7 +31,7 @@ func (conn *connLogger) log(depth int, event string) {
 	raddr := conn.RemoteAddr()
 	laddr := conn.LocalAddr()
 
-	// Here we're doing our best to get adjust the call depth to point outside
+	// Here we're doing our best to adjust the call depth to point outside
 	// of this package, but if the connection is wrapped again it may not be
 	// very meaningful to report the file/line from which the connection was
 	// handled or closed.
