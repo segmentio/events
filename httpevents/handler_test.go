@@ -1,6 +1,7 @@
 package httpevents
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -17,7 +18,11 @@ func TestHandler(t *testing.T) {
 	req.Header.Set("User-Agent", "httpevents")
 	req.URL.Fragment = "universe" // for some reason NewRequest doesn't parses this
 	req.Host = "www.github.com"
-	req.RemoteAddr = "127.0.0.1"
+	req.RemoteAddr = "127.0.0.1:56789"
+	req = req.WithContext(context.WithValue(req.Context(), http.LocalAddrContextKey, mockAddr{
+		s: "127.0.0.1:80",
+		n: "tcp",
+	}))
 
 	res := httptest.NewRecorder()
 	log := events.NewLogger(events.HandlerFunc(func(e *events.Event) {
@@ -39,9 +44,10 @@ func TestHandler(t *testing.T) {
 	e.Time = time.Time{}
 
 	if !reflect.DeepEqual(e, events.Event{
-		Message: `127.0.0.1 - www.github.com - GET /hello?answer=42#universe - 202 Accepted - "httpevents"`,
+		Message: `127.0.0.1:80->127.0.0.1:56789 - www.github.com - GET /hello?answer=42#universe - 202 Accepted - "httpevents"`,
 		Args: events.Args{
-			{"address", "127.0.0.1"},
+			{"local_address", "127.0.0.1:80"},
+			{"remote_address", "127.0.0.1:56789"},
 			{"host", "www.github.com"},
 			{"method", "GET"},
 			{"path", "/hello"},
@@ -61,7 +67,11 @@ func TestHandlerPanic(t *testing.T) {
 	req := httptest.NewRequest("POST", "/", nil)
 	req.Header.Set("User-Agent", "httpevents")
 	req.Host = "www.github.com"
-	req.RemoteAddr = "127.0.0.1"
+	req.RemoteAddr = "127.0.0.1:56789"
+	req = req.WithContext(context.WithValue(req.Context(), http.LocalAddrContextKey, mockAddr{
+		s: "127.0.0.1:80",
+		n: "tcp",
+	}))
 
 	res := httptest.NewRecorder()
 	log := events.NewLogger(events.HandlerFunc(func(e *events.Event) {
@@ -87,9 +97,10 @@ func TestHandlerPanic(t *testing.T) {
 	e.Time = time.Time{}
 
 	if !reflect.DeepEqual(e, events.Event{
-		Message: `127.0.0.1 - www.github.com - POST / - 500 Internal Server Error - "httpevents"`,
+		Message: `127.0.0.1:80->127.0.0.1:56789 - www.github.com - POST / - 500 Internal Server Error - "httpevents"`,
 		Args: events.Args{
-			{"address", "127.0.0.1"},
+			{"local_address", "127.0.0.1:80"},
+			{"remote_address", "127.0.0.1:56789"},
 			{"host", "www.github.com"},
 			{"method", "POST"},
 			{"path", "/"},
@@ -102,3 +113,11 @@ func TestHandlerPanic(t *testing.T) {
 		t.Errorf("%#v", e)
 	}
 }
+
+type mockAddr struct {
+	s string
+	n string
+}
+
+func (a mockAddr) String() string  { return a.s }
+func (a mockAddr) Network() string { return a.n }
