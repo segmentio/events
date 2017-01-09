@@ -22,12 +22,19 @@ func Signal(sigchan <-chan os.Signal, handler Handler) <-chan os.Signal {
 
 	go func() {
 		for sig := range sigchan {
-			handler.HandleEvent(&Event{
+			h := handler
+
+			if h == nil {
+				h = DefaultHandler
+			}
+
+			h.HandleEvent(&Event{
 				Message: sig.String(),
 				Source:  fmt.Sprintf("%s:%d", file, line),
 				Time:    time.Now(),
 				Args:    Args{{"signal", sig}},
 			})
+
 			// Limits to 1s the attempt to publish to the output channel, this
 			// is a safeguard for programs that don't consume from the output
 			// channel (event though they should).
