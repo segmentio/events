@@ -42,6 +42,7 @@ func (w *Writer) Write(b []byte) (int, error) {
 		return 0, nil
 	}
 
+	var h = w.handler
 	var e = eventPool.Get().(*events.Event)
 	var s = *(*string)(unsafe.Pointer(&reflect.StringHeader{
 		Data: uintptr(unsafe.Pointer(&b[0])),
@@ -49,6 +50,10 @@ func (w *Writer) Write(b []byte) (int, error) {
 	}))
 	var t time.Time
 	var src string
+
+	if h == nil {
+		h = events.DefaultHandler
+	}
 
 	w.mutex.Lock()
 	flags, prefix := w.flags, w.prefix
@@ -103,7 +108,7 @@ func (w *Writer) Write(b []byte) (int, error) {
 	e.Source = src
 	e.Time = t
 
-	w.handler.HandleEvent(e)
+	h.HandleEvent(e)
 	w.mutex.Unlock()
 
 	e.Message = ""

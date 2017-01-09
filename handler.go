@@ -41,5 +41,10 @@ func (m *multiHandler) HandleEvent(e *Event) {
 	}
 }
 
-// Discard is a handler that does nothing with the events it receives.
-var Discard Handler = HandlerFunc(func(e *Event) {})
+var (
+	// Discard is a handler that does nothing with the events it receives.
+	Discard Handler = HandlerFunc(func(e *Event) {})
+
+	// DefaultHandler is the default handler used when non is specified.
+	DefaultHandler Handler = Discard
+)

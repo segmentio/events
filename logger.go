@@ -13,7 +13,7 @@ import (
 
 // DefaultLogger is the default logger used by the Log function. This may be
 // overwritten by the program to change the default route for log events.
-var DefaultLogger = NewLogger(Discard)
+var DefaultLogger = NewLogger(nil)
 
 // Log emits a log event to the default logger.
 func Log(format string, args ...interface{}) {
@@ -91,8 +91,13 @@ func (l *Logger) Log(format string, args ...interface{}) {
 }
 
 func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) {
+	var h = l.Handler
 	var s = logPool.Get().(*logState)
 	var a Args
+
+	if h == nil {
+		h = DefaultHandler
+	}
 
 	if l.EnableSource {
 		var pc [1]uintptr
@@ -123,7 +128,7 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 	s.e.Debug = debug
 	s.e.Time = time.Now()
 
-	l.Handler.HandleEvent(&s.e)
+	h.HandleEvent(&s.e)
 
 	s.e.Message = ""
 	s.e.Source = ""

@@ -9,6 +9,6 @@ import (
 
 func init() {
 	if terminal.IsTerminal(1) {
-		events.DefaultLogger.Handler = NewHandler("", os.Stdout)
+		events.DefaultHandler = NewHandler("", os.Stdout)
 	}
 }

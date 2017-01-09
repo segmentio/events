@@ -28,11 +28,14 @@ func NewLogger(prefix string, flags int, handler events.Handler) *log.Logger {
 }
 
 // NewHandler creates an event handler with best suits w.
+//
+// If w is nil the function returns nil (which a logger interprets as using the
+// default handler).
 func NewHandler(w io.Writer) events.Handler {
 	var term bool
 
 	if w == nil {
-		return defaultHandler
+		return nil
 	}
 
 	if f, ok := w.(interface {
@@ -48,14 +51,9 @@ func NewHandler(w io.Writer) events.Handler {
 }
 
 var (
-	// The default handler used by the global output.
-	defaultHandler = events.HandlerFunc(func(e *events.Event) {
-		events.DefaultLogger.Handler.HandleEvent(e)
-	})
-
 	// Cache of the output set for the default logger, we need this because the
 	// standard log package doesn't expose any API to retrieve it.
-	defaultWriter *Writer = NewWriter(log.Prefix(), log.Flags(), defaultHandler)
+	defaultWriter *Writer = NewWriter(log.Prefix(), log.Flags(), nil)
 )
 
 // =============================================================================
