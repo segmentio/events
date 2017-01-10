@@ -10,7 +10,7 @@ import (
 )
 
 // DefaultTimeFormat is the default time format set on Handler.
-const DefaultTimeFormat = "2006-01-02 15:04:05.999"
+const DefaultTimeFormat = "2006-01-02 15:04:05.000"
 
 // Handler is an event handler which format events in a human-readable format
 // and writes them to its output.
