@@ -14,6 +14,10 @@ type connLogger struct {
 	once sync.Once
 }
 
+func (conn *connLogger) Base() net.Conn {
+	return conn.Conn
+}
+
 func (conn *connLogger) Close() error {
 	conn.close(1)
 	return conn.Conn.Close()
