@@ -14,7 +14,7 @@ type connLogger struct {
 	once sync.Once
 }
 
-func (conn *connLogger) Base() net.Conn {
+func (conn *connLogger) BaseConn() net.Conn {
 	return conn.Conn
 }
 
