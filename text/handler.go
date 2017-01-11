@@ -21,6 +21,7 @@ type Handler struct {
 	Prefix       string         // written at the beginning of each formatted event
 	TimeFormat   string         // format used for the event's time
 	TimeLocation *time.Location // location to output the event time in
+	EnableArgs   bool           // output detailes of each args in the events
 }
 
 // NewHandler creates a new handler which writes to output with a prefix on each
@@ -55,25 +56,28 @@ func (h *Handler) HandleEvent(e *events.Event) {
 
 	buf.b = append(buf.b, e.Message...)
 	buf.b = append(buf.b, '\n')
-	hasError := false
 
-	for _, a := range e.Args {
-		if _, ok := a.Value.(error); ok {
-			hasError = true
-		} else if e.Debug {
-			buf.b = append(buf.b, '\t')
-			buf.b = append(buf.b, a.Name...)
-			buf.b = append(buf.b, ':', ' ')
-			fmt.Fprintf(buf, "%v\n", a.Value)
-		}
-	}
-
-	if hasError {
-		fmt.Fprint(buf, "\terrors:\n")
+	if h.EnableArgs {
+		hasError := false
 
 		for _, a := range e.Args {
-			if err, ok := a.Value.(error); ok {
-				fmt.Fprintf(buf, "\t\t- %+v\n", err)
+			if _, ok := a.Value.(error); ok {
+				hasError = true
+			} else {
+				buf.b = append(buf.b, '\t')
+				buf.b = append(buf.b, a.Name...)
+				buf.b = append(buf.b, ':', ' ')
+				fmt.Fprintf(buf, "%v\n", a.Value)
+			}
+		}
+
+		if hasError {
+			fmt.Fprint(buf, "\terrors:\n")
+
+			for _, a := range e.Args {
+				if err, ok := a.Value.(error); ok {
+					fmt.Fprintf(buf, "\t\t- %+v\n", err)
+				}
 			}
 		}
 	}

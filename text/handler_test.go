@@ -13,6 +13,7 @@ import (
 func TestHandler(t *testing.T) {
 	b := &bytes.Buffer{}
 	h := NewHandler("==> ", b)
+	h.EnableArgs = true
 
 	h.HandleEvent(&events.Event{
 		Message: "Hello Luke!",
