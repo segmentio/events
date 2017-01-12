@@ -57,6 +57,7 @@ type responseWriter struct {
 	http.ResponseWriter
 	logger *events.Logger
 	request
+	wroteHeader bool
 }
 
 func (w *responseWriter) WriteHeader(status int) {
@@ -65,5 +66,8 @@ func (w *responseWriter) WriteHeader(status int) {
 		w.status = status
 		w.log(logger, 1)
 	}
-	w.ResponseWriter.WriteHeader(status)
+	if !w.wroteHeader {
+		w.wroteHeader = true
+		w.ResponseWriter.WriteHeader(status)
+	}
 }

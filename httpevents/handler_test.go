@@ -11,6 +11,32 @@ import (
 	"github.com/segmentio/events"
 )
 
+type writer struct {
+	http.ResponseWriter
+	writeHeader int
+}
+
+func (w *writer) WriteHeader(status int) {
+	w.writeHeader++
+	w.ResponseWriter.WriteHeader(status)
+}
+
+func TestHandlerWriteOnce(t *testing.T) {
+	w := &writer{
+		ResponseWriter: httptest.NewRecorder(),
+	}
+	r := &responseWriter{
+		ResponseWriter: w,
+	}
+
+	r.WriteHeader(http.StatusOK)
+	r.WriteHeader(http.StatusOK)
+
+	if w.writeHeader != 1 {
+		t.Error("invalid number of WriteHeader calls to the base ResponseWriter:", w.writeHeader)
+	}
+}
+
 func TestHandler(t *testing.T) {
 	evList := []*events.Event{}
 
