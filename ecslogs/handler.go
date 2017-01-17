@@ -20,7 +20,9 @@ import (
 //
 // It is safe to use a handler concurrently from multiple goroutines.
 type Handler struct {
-	Output io.Writer
+	Output  io.Writer
+	Program string
+	Pid     int
 }
 
 // NewHandler creates a new handler which writes to output
@@ -41,6 +43,8 @@ func (h *Handler) HandleEvent(e *events.Event) {
 	f.message = e.Message
 	f.data.args = e.Args
 	f.info.Source = e.Source
+	f.info.Program = h.Program
+	f.info.Pid = h.Pid
 
 	if e.Debug {
 		f.level = "DEBUG"
@@ -71,8 +75,10 @@ type event struct {
 }
 
 type eventInfo struct {
-	Source string       `objconv:"source,omitempty"`
-	Errors []eventError `objconv:"errors,omitempty"`
+	Program string       `objconv:"program,omitempty"`
+	Source  string       `objconv:"source,omitempty"`
+	Pid     int          `objconv:"pid,omitempty"`
+	Errors  []eventError `objconv:"errors,omitempty"`
 }
 
 type eventError struct {
