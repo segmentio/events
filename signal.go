@@ -21,6 +21,8 @@ func Signal(sigchan <-chan os.Signal, handler Handler) <-chan os.Signal {
 	file, line := SourceForPC(pc[0])
 
 	go func() {
+		defer close(output)
+
 		for sig := range sigchan {
 			h := handler
 
