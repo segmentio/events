@@ -38,7 +38,7 @@ func Debug(format string, args ...interface{}) {
 //
 // Here's an example with the defalut logger:
 //
-//	events.Log("Hello %:name:s!", "Luke", events.Args{
+//	events.Log("Hello %{name}s!", "Luke", events.Args{
 //		{"from", "Han"},
 //	})
 //
