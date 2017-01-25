@@ -62,8 +62,6 @@ func TestTransport(t *testing.T) {
 			{"host", req.Host},
 			{"method", "GET"},
 			{"path", "/"},
-			{"query", ""},
-			{"fragment", ""},
 			{"status", 200},
 			{"agent", "httpevents"},
 		},

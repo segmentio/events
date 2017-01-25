@@ -130,8 +130,6 @@ func TestHandlerPanic(t *testing.T) {
 			{"host", "www.github.com"},
 			{"method", "POST"},
 			{"path", "/"},
-			{"query", ""},
-			{"fragment", ""},
 			{"status", 500},
 			{"agent", "httpevents"},
 		},
