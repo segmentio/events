@@ -1,6 +1,7 @@
 package httpevents
 
 import (
+	"bufio"
 	"net"
 	"net/http"
 
@@ -70,4 +71,12 @@ func (w *responseWriter) WriteHeader(status int) {
 		w.wroteHeader = true
 		w.ResponseWriter.WriteHeader(status)
 	}
+}
+
+func (w *responseWriter) Hijack() (conn net.Conn, rw *bufio.ReadWriter, err error) {
+	if conn, rw, err = w.ResponseWriter.(http.Hijacker).Hijack(); err == nil {
+		w.logger = nil
+		w.wroteHeader = true
+	}
+	return
 }
