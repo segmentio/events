@@ -1,6 +1,7 @@
 package httpevents
 
 import (
+	"bufio"
 	"net"
 	"net/http"
 
@@ -61,13 +62,25 @@ type responseWriter struct {
 }
 
 func (w *responseWriter) WriteHeader(status int) {
-	if logger := w.logger; logger != nil {
-		w.logger = nil
-		w.status = status
-		w.log(logger, 1)
-	}
+	w.log(1, status)
+
 	if !w.wroteHeader {
 		w.wroteHeader = true
 		w.ResponseWriter.WriteHeader(status)
+	}
+}
+
+func (w *responseWriter) Hijack() (conn net.Conn, rw *bufio.ReadWriter, err error) {
+	if conn, rw, err = w.ResponseWriter.(http.Hijacker).Hijack(); err == nil {
+		w.log(1, http.StatusSwitchingProtocols)
+	}
+	return
+}
+
+func (w *responseWriter) log(depth int, status int) {
+	if logger := w.logger; logger != nil {
+		w.logger = nil
+		w.request.status = status
+		w.request.log(logger, depth+1)
 	}
 }
