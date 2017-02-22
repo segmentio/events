@@ -73,6 +73,13 @@ func (w *responseWriter) WriteHeader(status int) {
 	}
 }
 
+func (w *responseWriter) Write(b []byte) (int, error) {
+	if !w.wroteHeader {
+		w.WriteHeader(http.StatusOK)
+	}
+	return w.ResponseWriter.Write(b)
+}
+
 func (w *responseWriter) Hijack() (conn net.Conn, rw *bufio.ReadWriter, err error) {
 	if conn, rw, err = w.ResponseWriter.(http.Hijacker).Hijack(); err == nil {
 		w.log(1, http.StatusSwitchingProtocols)
