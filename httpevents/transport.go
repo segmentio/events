@@ -6,12 +6,15 @@ import (
 	"github.com/segmentio/events"
 )
 
-// NewTransport wraps roundTripper and returns a new transport which logs all
-// submitted requests with logger.
-func NewTransport(logger *events.Logger, roundTripper http.RoundTripper) http.RoundTripper {
-	if logger == nil {
-		logger = events.DefaultLogger
-	}
+// NewTransportWith wraps roundTripper and returns a new transport which logs
+// all submitted requests with the default logger.
+func NewTransport(roundTripper http.RoundTripper) http.RoundTripper {
+	return NewTransportWith(events.DefaultLogger, roundTripper)
+}
+
+// NewTransportWith wraps roundTripper and returns a new transport which logs
+// all submitted requests with logger.
+func NewTransportWith(logger *events.Logger, roundTripper http.RoundTripper) http.RoundTripper {
 	return &transport{roundTripper, logger}
 }
 

@@ -24,7 +24,7 @@ func TestTransport(t *testing.T) {
 		evList = append(evList, e.Clone())
 	}))
 
-	transport := NewTransport(logger, http.DefaultTransport)
+	transport := NewTransportWith(logger, http.DefaultTransport)
 
 	req := httptest.NewRequest("GET", server.URL+"/", nil)
 	req.Header.Set("User-Agent", "httpevents")
