@@ -15,7 +15,7 @@ func TestDialFunc(t *testing.T) {
 		evList = append(evList, e.Clone())
 	}))
 
-	dial := DialFunc(logger, func(network string, address string) (net.Conn, error) {
+	dial := DialFuncWith(logger, func(network string, address string) (net.Conn, error) {
 		return mockConn{
 			laddr: mockAddr{"127.0.0.1:56789", network},
 			raddr: mockAddr{address, network},

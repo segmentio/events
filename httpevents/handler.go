@@ -9,15 +9,18 @@ import (
 )
 
 // NewHandler wraps the HTTP handler and returns a new handler which logs all
-// requests to logger.
+// requests with the default logger.
+func NewHandler(handler http.Handler) http.Handler {
+	return NewHandlerWith(events.DefaultLogger, handler)
+}
+
+// NewHandlerWith wraps the HTTP handler and returns a new handler which logs all
+// requests with logger.
 //
 // Panics from handler are intercepted and trigger a 500 response if no response
 // header was sent yet. The panic is not slienced tho and is propagated to the
 // parent handler.
-func NewHandler(logger *events.Logger, handler http.Handler) http.Handler {
-	if logger == nil {
-		logger = events.DefaultLogger
-	}
+func NewHandlerWith(logger *events.Logger, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		var laddr string
 
@@ -68,6 +71,13 @@ func (w *responseWriter) WriteHeader(status int) {
 		w.wroteHeader = true
 		w.ResponseWriter.WriteHeader(status)
 	}
+}
+
+func (w *responseWriter) Write(b []byte) (int, error) {
+	if !w.wroteHeader {
+		w.WriteHeader(http.StatusOK)
+	}
+	return w.ResponseWriter.Write(b)
 }
 
 func (w *responseWriter) Hijack() (conn net.Conn, rw *bufio.ReadWriter, err error) {

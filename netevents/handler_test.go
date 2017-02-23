@@ -17,7 +17,7 @@ func TestHandler(t *testing.T) {
 		evList = append(evList, e.Clone())
 	}))
 
-	handler := NewHandler(logger, netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
+	handler := NewHandlerWith(logger, netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
 		conn.Close()
 	}))
 

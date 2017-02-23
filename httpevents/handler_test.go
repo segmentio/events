@@ -55,7 +55,7 @@ func TestHandler(t *testing.T) {
 		evList = append(evList, e.Clone())
 	}))
 
-	h := NewHandler(log, http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+	h := NewHandlerWith(log, http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusAccepted)
 	}))
 	h.ServeHTTP(res, req)
@@ -104,7 +104,7 @@ func TestHandlerPanic(t *testing.T) {
 		evList = append(evList, e.Clone())
 	}))
 
-	h := NewHandler(log, http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+	h := NewHandlerWith(log, http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		panic("bye bye!")
 	}))
 

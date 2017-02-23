@@ -8,15 +8,17 @@ import (
 	"github.com/segmentio/netx"
 )
 
-// NewHandler returns a wrapper for handler which logs opening and closing
-// events that occur on the connections served by the handler with logger.
-//
-// The logger may be nil, in that case the default logger is used to report
-// the connection events.
-func NewHandler(logger *events.Logger, handler netx.Handler) netx.Handler {
-	if logger == nil {
-		logger = events.DefaultLogger
-	}
+// NewHandler returns a wrapper for handler which logs with the default logger
+// all opening and closing events that occur on the connections servied by the
+// handler.
+func NewHandler(handler netx.Handler) netx.Handler {
+	return NewHandlerWith(events.DefaultLogger, handler)
+}
+
+// NewHandlerWith returns a wrapper for handler which logs with logger all
+// opening and closing events that occur on the connections served by the
+// handler with logger.
+func NewHandlerWith(logger *events.Logger, handler netx.Handler) netx.Handler {
 	return netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
 		c := &connLogger{Conn: conn, Logger: logger, typ: "server"}
 		c.open(2)

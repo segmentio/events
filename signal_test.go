@@ -13,7 +13,7 @@ func TestSignal(t *testing.T) {
 	handler := HandlerFunc(func(e *Event) { evlist = append(evlist, e.Clone()) })
 
 	sigchan <- os.Interrupt
-	output := Signal(sigchan, handler)
+	output := SignalWith(handler, sigchan)
 
 	select {
 	case sig := <-output:
