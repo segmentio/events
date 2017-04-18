@@ -26,7 +26,6 @@ func run(signals <-chan os.Signal) {
 		switch sig {
 		case syscall.SIGUSR1:
 			events.DefaultLogger.EnableDebug = true
-
 		case syscall.SIGUSR2:
 			events.DefaultLogger.EnableDebug = false
 		}
