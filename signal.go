@@ -79,7 +79,19 @@ func WithSignals(ctx context.Context, signals ...os.Signal) (context.Context, co
 		signal.Stop(sigchan)
 	}()
 
-	return sig, func() { signal.Stop(sigchan); sig.cancel(context.Canceled); close(sigchan) }
+	// Allow the cancel function to be called multiple times without causing a
+	// panic because sigchan is already closed.
+	once := sync.Once{}
+
+	cancel := func() {
+		once.Do(func() {
+			signal.Stop(sigchan)
+			sig.cancel(context.Canceled)
+			close(sigchan)
+		})
+	}
+
+	return sig, cancel
 }
 
 // SignalError is a wrapper for the os.Signal type which also implements the

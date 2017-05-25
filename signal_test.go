@@ -51,6 +51,25 @@ func TestSignal(t *testing.T) {
 }
 
 func TestWithSignals(t *testing.T) {
+	t.Run("cancelling returns context.Canceled", func(t *testing.T) {
+		ctx, cancel := WithSignals(context.Background(), os.Interrupt)
+
+		// Ensure we can call cancel multiple times
+		cancel()
+		cancel()
+
+		select {
+		case <-ctx.Done():
+		default:
+			t.Error("the context should have been canceled after the cancellation function was called")
+			return
+		}
+
+		if err := ctx.Err(); err != context.Canceled {
+			t.Error("bad error returned after the context was canceled:", err)
+		}
+	})
+
 	t.Run("receive os.Interrupt", func(t *testing.T) {
 		ctx, cancel := WithSignals(context.Background(), os.Interrupt)
 		defer cancel()
