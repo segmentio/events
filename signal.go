@@ -79,7 +79,7 @@ func WithSignals(ctx context.Context, signals ...os.Signal) (context.Context, co
 }
 
 // SignalError is a wrapper for the os.Signal type which also implements the
-// error interface so it can be reporeted by the Err method of a context.
+// error interface so it can be reported by the Err method of a context.
 type SignalError struct {
 	os.Signal
 }
