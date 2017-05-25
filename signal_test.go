@@ -1,6 +1,7 @@
 package events
 
 import (
+	"context"
 	"os"
 	"reflect"
 	"testing"
@@ -46,5 +47,31 @@ func TestSignal(t *testing.T) {
 		Args:    Args{{"signal", os.Interrupt}},
 	}) {
 		t.Errorf("bad event: %#v", *evlist[0])
+	}
+}
+
+func TestWithSignals(t *testing.T) {
+	ctx, cancel := WithSignals(context.Background(), os.Interrupt)
+	defer cancel()
+
+	p, _ := os.FindProcess(os.Getpid())
+	p.Signal(os.Interrupt)
+
+	select {
+	case <-ctx.Done():
+	case <-time.After(time.Second):
+		t.Error("no signals received within 1 second")
+		return
+	}
+
+	err := ctx.Err()
+
+	switch e := err.(type) {
+	case *SignalError:
+		if e.Signal != os.Interrupt {
+			t.Error("bad signal returned by the context:", e)
+		}
+	default:
+		t.Error("bad error returned by the context:", e)
 	}
 }
