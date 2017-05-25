@@ -51,27 +51,50 @@ func TestSignal(t *testing.T) {
 }
 
 func TestWithSignals(t *testing.T) {
-	ctx, cancel := WithSignals(context.Background(), os.Interrupt)
-	defer cancel()
+	t.Run("receive os.Interrupt", func(t *testing.T) {
+		ctx, cancel := WithSignals(context.Background(), os.Interrupt)
+		defer cancel()
 
-	p, _ := os.FindProcess(os.Getpid())
-	p.Signal(os.Interrupt)
+		p, _ := os.FindProcess(os.Getpid())
+		p.Signal(os.Interrupt)
 
-	select {
-	case <-ctx.Done():
-	case <-time.After(time.Second):
-		t.Error("no signals received within 1 second")
-		return
-	}
-
-	err := ctx.Err()
-
-	switch e := err.(type) {
-	case *SignalError:
-		if e.Signal != os.Interrupt {
-			t.Error("bad signal returned by the context:", e)
+		select {
+		case <-ctx.Done():
+		case <-time.After(time.Second):
+			t.Error("no signals received within 1 second")
+			return
 		}
-	default:
-		t.Error("bad error returned by the context:", e)
-	}
+
+		err := ctx.Err()
+
+		switch e := err.(type) {
+		case *SignalError:
+			if e.Signal != os.Interrupt {
+				t.Error("bad signal returned by the context:", e)
+			}
+		default:
+			t.Error("bad error returned by the context:", e)
+		}
+	})
+
+	t.Run("report cancellation of the parent context", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		sig, stop := WithSignals(ctx, os.Interrupt)
+		defer stop()
+
+		cancel()
+
+		select {
+		case <-sig.Done():
+		case <-time.After(1 * time.Second):
+			t.Error("no cancellation received within 1 second")
+			return
+		}
+
+		if err := sig.Err(); err != context.Canceled {
+			t.Error("the parent error wasn't reported:", err)
+		}
+	})
 }

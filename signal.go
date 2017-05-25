@@ -70,8 +70,12 @@ func WithSignals(ctx context.Context, signals ...os.Signal) (context.Context, co
 	}
 
 	go func() {
-		s := <-sigrecv
-		sig.cancel(&SignalError{Signal: s})
+		select {
+		case s := <-sigrecv:
+			sig.cancel(&SignalError{Signal: s})
+		case <-ctx.Done():
+			sig.cancel(ctx.Err())
+		}
 		signal.Stop(sigchan)
 	}()
 
