@@ -1,9 +1,13 @@
 package events
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -50,4 +54,84 @@ func SignalWith(handler Handler, sigchan <-chan os.Signal) <-chan os.Signal {
 	}()
 
 	return output
+}
+
+// WithSignals returns a copy of the given context which may be canceled if any
+// of the given signals is received by the program.
+func WithSignals(ctx context.Context, signals ...os.Signal) (context.Context, context.CancelFunc) {
+	done := make(chan struct{})
+	sigchan := make(chan os.Signal)
+	sigrecv := Signal(sigchan)
+	signal.Notify(sigchan, signals...)
+
+	sig := &signalCtx{
+		parent: ctx,
+		done:   done,
+	}
+
+	go func() {
+		select {
+		case s := <-sigrecv:
+			sig.cancel(&SignalError{Signal: s})
+		case <-ctx.Done():
+			sig.cancel(ctx.Err())
+		}
+		signal.Stop(sigchan)
+	}()
+
+	// Allow the cancel function to be called multiple times without causing a
+	// panic because sigchan is already closed.
+	once := sync.Once{}
+
+	cancel := func() {
+		once.Do(func() {
+			signal.Stop(sigchan)
+			sig.cancel(context.Canceled)
+			close(sigchan)
+		})
+	}
+
+	return sig, cancel
+}
+
+// SignalError is a wrapper for the os.Signal type which also implements the
+// error interface so it can be reported by the Err method of a context.
+type SignalError struct {
+	os.Signal
+}
+
+// Error satisfies the error interface.
+func (s *SignalError) Error() string {
+	return s.String()
+}
+
+type signalCtx struct {
+	parent context.Context
+	once   sync.Once
+	err    atomic.Value
+	done   chan struct{}
+}
+
+func (s *signalCtx) Deadline() (time.Time, bool) {
+	return s.parent.Deadline()
+}
+
+func (s *signalCtx) Done() <-chan struct{} {
+	return s.done
+}
+
+func (s *signalCtx) Err() error {
+	err, _ := s.err.Load().(error)
+	return err
+}
+
+func (c *signalCtx) Value(key interface{}) interface{} {
+	return c.parent.Value(key)
+}
+
+func (s *signalCtx) cancel(err error) {
+	s.once.Do(func() {
+		s.err.Store(err)
+		close(s.done)
+	})
 }
