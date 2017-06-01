@@ -6,8 +6,6 @@ import (
 	"log"
 	"os"
 
-	"golang.org/x/crypto/ssh/terminal"
-
 	"github.com/segmentio/events"
 	"github.com/segmentio/events/ecslogs"
 	"github.com/segmentio/events/text"
@@ -41,7 +39,7 @@ func NewHandler(w io.Writer) events.Handler {
 	if f, ok := w.(interface {
 		Fd() uintptr
 	}); ok {
-		term = terminal.IsTerminal(int(f.Fd()))
+		term = events.IsTerminal(int(f.Fd()))
 	}
 
 	if term {
