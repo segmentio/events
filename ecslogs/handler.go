@@ -23,6 +23,9 @@ type Handler struct {
 	Output  io.Writer
 	Program string
 	Pid     int
+
+	// synchronizes writes to the output
+	mutex sync.Mutex
 }
 
 // NewHandler creates a new handler which writes to output
@@ -59,7 +62,10 @@ func (h *Handler) HandleEvent(e *events.Event) {
 
 	(objconv.Encoder{Emitter: &f.emitter}).Encode(f.value)
 	f.buffer.WriteByte('\n')
+
+	h.mutex.Lock()
 	h.Output.Write(f.buffer.b)
+	h.mutex.Unlock()
 
 	f.info.Source = ""
 	f.info.Errors = f.info.Errors[:0]

@@ -22,6 +22,9 @@ type Handler struct {
 	TimeFormat   string         // format used for the event's time
 	TimeLocation *time.Location // location to output the event time in
 	EnableArgs   bool           // output detailes of each args in the events
+
+	// synchronizes writes to the output
+	mutex sync.Mutex
 }
 
 // NewHandler creates a new handler which writes to output with a prefix on each
@@ -82,7 +85,9 @@ func (h *Handler) HandleEvent(e *events.Event) {
 		}
 	}
 
+	h.mutex.Lock()
 	h.Output.Write(buf.b)
+	h.mutex.Unlock()
 	bufferPool.Put(buf)
 }
 
