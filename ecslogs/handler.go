@@ -120,10 +120,10 @@ func (data *eventData) EncodeValue(e objconv.Encoder) error {
 	i := data.next(0)
 	return e.EncodeMap(-1, func(k objconv.Encoder, v objconv.Encoder) (err error) {
 		if i != n {
-			if err = k.EncodeString(data.args[i].Name); err != nil {
+			if err = k.Encode(&data.args[i].Name); err != nil {
 				return
 			}
-			if err = v.Encode(data.args[i].Value); err != nil {
+			if err = v.Encode(&data.args[i].Value); err != nil {
 				return
 			}
 			i = data.next(i + 1)
@@ -160,7 +160,7 @@ func (st stackTrace) EncodeValue(e objconv.Encoder) error {
 		file, line := events.SourceForPC(uintptr(st[i]))
 		i++
 		fmt.Fprintf(&f.buffer, "%s:%d", file, line)
-		return e.EncodeString(stringNoCopy(f.buffer.b))
+		return e.Encode(stringNoCopy(f.buffer.b))
 	})
 
 	fmtPool.Put(f)
