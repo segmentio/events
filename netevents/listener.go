@@ -5,32 +5,31 @@ import (
 	"sync/atomic"
 
 	"github.com/segmentio/events"
-	"github.com/segmentio/netx"
 )
 
-// NewListener returns a wrapped version of lstn which logs with the default
+// NewListener returns a wrapped version of listener which logs with the default
 // logger all accept and close events that occur on the listener.
-func NewListener(lstn net.Listener) net.Listener {
-	return NewListenerWith(events.DefaultLogger, lstn)
+func NewListener(listener net.Listener) net.Listener {
+	return NewListenerWith(events.DefaultLogger, listener)
 }
 
-// NewListenerWith returns a wrapped version of lstn which logs with logger
+// NewListenerWith returns a wrapped version of listener which logs with logger
 // all accept and close events that occur on the listener.
-func NewListenerWith(logger *events.Logger, lstn net.Listener) net.Listener {
-	return &listener{
-		lstn:   lstn,
-		logger: logger,
+func NewListenerWith(logger *events.Logger, listener net.Listener) net.Listener {
+	return &listenerLogger{
+		Listener: listener,
+		Logger:   logger,
 	}
 }
 
-type listener struct {
-	lstn   net.Listener
-	logger *events.Logger
+type listenerLogger struct {
+	net.Listener
+	*events.Logger
 	closed uint32
 }
 
-func (l *listener) Accept() (conn net.Conn, err error) {
-	if conn, err = l.lstn.Accept(); err != nil {
+func (l *listenerLogger) Accept() (conn net.Conn, err error) {
+	if conn, err = l.Listener.Accept(); err != nil {
 		if atomic.LoadUint32(&l.closed) == 0 {
 			l.error("accept", err)
 		}
@@ -39,7 +38,7 @@ func (l *listener) Accept() (conn net.Conn, err error) {
 	if conn != nil {
 		cl := &connLogger{
 			Conn:   conn,
-			Logger: l.logger,
+			Logger: l.Logger,
 			typ:    "server",
 		}
 		cl.open(1)
@@ -49,27 +48,23 @@ func (l *listener) Accept() (conn net.Conn, err error) {
 	return
 }
 
-func (l *listener) Close() (err error) {
+func (l *listenerLogger) Close() (err error) {
 	if atomic.CompareAndSwapUint32(&l.closed, 0, 1) {
 		addr := l.Addr()
-		logger := *l.logger
+		logger := *l.Logger
 		logger.CallDepth++
 		logger.Debug("%{local_address}s - %{event}s %{type}s %{protocol}s socket",
 			addr.String(), "shutting down", "server", addr.Network(),
 		)
 	}
-	return l.lstn.Close()
+	return l.Listener.Close()
 }
 
-func (l *listener) Addr() net.Addr {
-	return l.lstn.Addr()
-}
-
-func (l *listener) error(op string, err error) {
-	logger := *l.logger
+func (l *listenerLogger) error(op string, err error) {
+	logger := *l.Logger
 	logger.CallDepth += 2
 
-	if netx.IsTemporary(err) {
+	if isTemporary(err) {
 		logger.Debug("%{local_address}s - temporary error accepting connections - %{error}s",
 			l.Addr(), err,
 		)
@@ -78,4 +73,11 @@ func (l *listener) error(op string, err error) {
 			l.Addr(), err,
 		)
 	}
+}
+
+func isTemporary(err error) bool {
+	e, ok := err.(interface {
+		Temporary() bool
+	})
+	return ok && e.Temporary()
 }
