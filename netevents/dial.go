@@ -29,7 +29,7 @@ func DialFuncWith(logger *events.Logger, dial func(string, string) (net.Conn, er
 	}
 }
 
-// DialContextFuncWith returns a wrapper for dial which logs with the default
+// DialContextFunc returns a wrapper for dial which logs with the default
 // logger all opening and closing events that occur on the connections returned
 // by the dial function.
 func DialContextFunc(dial func(context.Context, string, string) (net.Conn, error)) func(context.Context, string, string) (net.Conn, error) {
