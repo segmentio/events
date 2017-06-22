@@ -8,14 +8,14 @@ import (
 	"github.com/segmentio/netx"
 )
 
-// NewHandler returns a wrapper for handler which logs with the default logger
+// NewHandler returns a wrapped handler which logs with the default logger
 // all opening and closing events that occur on the connections servied by the
 // handler.
 func NewHandler(handler netx.Handler) netx.Handler {
 	return NewHandlerWith(events.DefaultLogger, handler)
 }
 
-// NewHandlerWith returns a wrapper for handler which logs with logger all
+// NewHandlerWith returns a wrapped handler which logs with logger all
 // opening and closing events that occur on the connections served by the
 // handler with logger.
 func NewHandlerWith(logger *events.Logger, handler netx.Handler) netx.Handler {
