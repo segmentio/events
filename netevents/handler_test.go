@@ -8,8 +8,13 @@ import (
 	"time"
 
 	"github.com/segmentio/events"
-	"github.com/segmentio/netx"
 )
+
+type testHandler struct{}
+
+func (*testHandler) ServeConn(ctx context.Context, conn net.Conn) {
+	conn.Close()
+}
 
 func TestHandler(t *testing.T) {
 	evList := []*events.Event{}
@@ -17,9 +22,7 @@ func TestHandler(t *testing.T) {
 		evList = append(evList, e.Clone())
 	}))
 
-	handler := NewHandlerWith(logger, netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
-		conn.Close()
-	}))
+	handler := NewHandlerWith(logger, &testHandler{})
 
 	handler.ServeConn(context.Background(), mockConn{
 		laddr: mockAddr{"127.0.0.1:80", "tcp"},
