@@ -75,5 +75,19 @@ func (r *request) log(logger *events.Logger, depth int) {
 	// transport outside of the httpevents package.
 	l := *logger
 	l.CallDepth += depth + 1
-	l.Log(string(fmt), arg...)
+
+	switch {
+	case is4xx(r.status) || is5xx(r.status):
+		l.Log(string(fmt), arg...)
+	default:
+		l.Debug(string(fmt), arg...)
+	}
+}
+
+func is4xx(status int) bool {
+	return status >= 400 && status <= 499
+}
+
+func is5xx(status int) bool {
+	return status >= 500 && status <= 599
 }
