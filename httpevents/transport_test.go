@@ -5,9 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
-	"time"
 
 	"github.com/segmentio/events"
 )
@@ -50,11 +48,7 @@ func TestTransport(t *testing.T) {
 		return
 	}
 
-	e := *evList[0]
-	e.Source = ""
-	e.Time = time.Time{}
-
-	if !reflect.DeepEqual(e, events.Event{
+	if e := *evList[0]; !equalEvents(e, events.Event{
 		Message: fmt.Sprintf(`*->192.0.2.1:1234 - %s - GET / - 200 OK - "httpevents"`, req.Host),
 		Args: events.Args{
 			{"local_address", "*"},

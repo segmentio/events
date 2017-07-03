@@ -121,7 +121,7 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 	s.fmt, s.e.Args = appendFormat(s.fmt, s.e.Args, format, args)
 	s.e.Args = append(s.e.Args, a...)
 
-	fmt.Fprintf(s, string(s.fmt), args...)
+	fmt.Fprintf(s, stringNoCopy(s.fmt), args...)
 
 	s.e.Message = stringNoCopy(s.msg)
 	s.e.Source = stringNoCopy(s.src)

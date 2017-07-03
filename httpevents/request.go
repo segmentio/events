@@ -2,23 +2,66 @@ package httpevents
 
 import (
 	"net/http"
+	"reflect"
+	"sync"
+	"unsafe"
 
 	"github.com/segmentio/events"
 )
 
+// The request type is used to generate the log lines of http requests sent by
+// a http.RoundTripper or received by a http.Handler.
+//
+// The package manages a pool of request values to avoid having to reallocate a
+// new request object for each request being logged.
 type request struct {
-	laddr    string
-	raddr    string
-	method   string
-	host     string
-	path     string
-	query    string
-	fragment string
-	agent    string
-	status   int
+	laddr      string
+	raddr      string
+	method     string
+	host       string
+	path       string
+	query      string
+	fragment   string
+	agent      string
+	status     int
+	statusText string
+	fmtbuf     []byte
+	logbuf     []byte
+	argbuf     []interface{}
 }
 
-func makeRequest(req *http.Request, laddr string) request {
+func acquireRequest(req *http.Request, laddr string) *request {
+	r := requestPool.Get().(*request)
+	r.reset(req, laddr)
+	return r
+}
+
+func releaseRequest(r *request) {
+	r.release()
+	requestPool.Put(r)
+}
+
+func (r *request) release() {
+	const zero = ""
+
+	// Don't retain pointers so the garbage collector is free to release them.
+	r.laddr = zero
+	r.raddr = zero
+	r.method = zero
+	r.host = zero
+	r.path = zero
+	r.query = zero
+	r.fragment = zero
+	r.agent = zero
+	r.status = 0
+	r.statusText = zero
+
+	for i := range r.argbuf {
+		r.argbuf[i] = nil
+	}
+}
+
+func (r *request) reset(req *http.Request, laddr string) {
 	var raddr string
 
 	if len(laddr) == 0 {
@@ -29,47 +72,50 @@ func makeRequest(req *http.Request, laddr string) request {
 		raddr = "???"
 	}
 
-	return request{
-		laddr:    laddr,
-		raddr:    raddr,
-		method:   req.Method,
-		host:     req.Host,
-		path:     req.URL.Path,
-		query:    req.URL.RawQuery,
-		fragment: req.URL.Fragment,
-		agent:    req.UserAgent(),
-	}
+	r.laddr = laddr
+	r.raddr = raddr
+	r.method = req.Method
+	r.host = req.Host
+	r.path = req.URL.Path
+	r.query = req.URL.RawQuery
+	r.fragment = req.URL.Fragment
+	r.agent = req.UserAgent()
 }
 
 func (r *request) log(logger *events.Logger, depth int) {
-	var mem [10]interface{}
-	var arg = append(mem[:0], r.laddr, r.raddr, r.host, r.method)
+	convS2E := safeConvS2E
+	convI2E := safeConvI2E
 
-	var buf [128]byte
-	var fmt = append(buf[:0], "%{local_address}s->%{remote_address}s - %{host}s - %{method}s"...)
+	if events.EnableUnsafeOptimizations {
+		convS2E = unsafeConvS2E
+		convI2E = unsafeConvI2E
+	}
+
+	arg := append(r.argbuf[:0], convS2E(&r.laddr), convS2E(&r.raddr), convS2E(&r.host), convS2E(&r.method))
+	fmt := append(r.logbuf[:0], "%{local_address}s->%{remote_address}s - %{host}s - %{method}s"...)
 
 	// Some methods don't have a path (like CONNECT), strip it to avoid printing
 	// a double-space.
 	if len(r.path) != 0 {
 		fmt = append(fmt, " %{path}s"...)
-		arg = append(arg, r.path)
+		arg = append(arg, convS2E(&r.path))
 	}
 
 	// Don't output a '?' character when the query string is empty, this is
 	// a more natural way of reading URLs.
 	if len(r.query) != 0 {
 		fmt = append(fmt, "?%{query}s"...)
-		arg = append(arg, r.query)
+		arg = append(arg, convS2E(&r.query))
 	}
 
 	// Same than with the query string, don't output a '#' character when
 	// there is no fragment.
 	if len(r.fragment) != 0 {
 		fmt = append(fmt, "#%{fragment}s"...)
-		arg = append(arg, r.fragment)
+		arg = append(arg, convS2E(&r.fragment))
 	}
 	fmt = append(fmt, " - %{status}d %s - %{agent}q"...)
-	arg = append(arg, r.status, http.StatusText(r.status), r.agent)
+	arg = append(arg, convI2E(&r.status), convS2E(&r.statusText), convS2E(&r.agent))
 
 	// Adjust the call depth so we can track the caller of the handler or the
 	// transport outside of the httpevents package.
@@ -78,11 +124,69 @@ func (r *request) log(logger *events.Logger, depth int) {
 
 	switch {
 	case is4xx(r.status) || is5xx(r.status):
-		l.Log(string(fmt), arg...)
+		l.Log(stringNoCopyNonEmpty(fmt), arg...)
 	default:
-		l.Debug(string(fmt), arg...)
+		l.Debug(stringNoCopyNonEmpty(fmt), arg...)
+	}
+
+	r.argbuf = arg
+	r.logbuf = fmt
+}
+
+var requestPool = sync.Pool{
+	New: func() interface{} { return newRequest() },
+}
+
+func newRequest() *request {
+	return &request{
+		fmtbuf: make([]byte, 0, 64),
+		logbuf: make([]byte, 0, 128),
+		argbuf: make([]interface{}, 0, 10),
 	}
 }
+
+func stringNoCopyNonEmpty(b []byte) string {
+	return *(*string)(unsafe.Pointer(&reflect.StringHeader{
+		Data: uintptr(unsafe.Pointer(&b[0])),
+		Len:  len(b),
+	}))
+}
+
+func safeConvS2E(s *string) interface{} {
+	return *s
+}
+
+func safeConvI2E(i *int) interface{} {
+	return *i
+}
+
+func unsafeConvS2E(s *string) (v interface{}) {
+	e := (*eface)(unsafe.Pointer(&v))
+	e.t = stringType
+	e.v = unsafe.Pointer(s)
+	return
+}
+
+func unsafeConvI2E(i *int) (v interface{}) {
+	e := (*eface)(unsafe.Pointer(&v))
+	e.t = intType
+	e.v = unsafe.Pointer(i)
+	return
+}
+
+type eface struct {
+	t unsafe.Pointer
+	v unsafe.Pointer
+}
+
+func typeOf(v interface{}) unsafe.Pointer {
+	return (*eface)(unsafe.Pointer(&v)).t
+}
+
+var (
+	intType    = typeOf(0)
+	stringType = typeOf("")
+)
 
 func is4xx(status int) bool {
 	return status >= 400 && status <= 499
