@@ -2,9 +2,7 @@ package httpevents
 
 import (
 	"net/http"
-	"reflect"
 	"sync"
-	"unsafe"
 
 	"github.com/segmentio/events"
 )
@@ -83,14 +81,6 @@ func (r *request) reset(req *http.Request, laddr string) {
 }
 
 func (r *request) log(logger *events.Logger, depth int) {
-	convS2E := safeConvS2E
-	convI2E := safeConvI2E
-
-	if events.EnableUnsafeOptimizations {
-		convS2E = unsafeConvS2E
-		convI2E = unsafeConvI2E
-	}
-
 	arg := append(r.argbuf[:0], convS2E(&r.laddr), convS2E(&r.raddr), convS2E(&r.host), convS2E(&r.method))
 	fmt := append(r.logbuf[:0], "%{local_address}s->%{remote_address}s - %{host}s - %{method}s"...)
 
@@ -124,9 +114,9 @@ func (r *request) log(logger *events.Logger, depth int) {
 
 	switch {
 	case is4xx(r.status) || is5xx(r.status):
-		l.Log(stringNoCopyNonEmpty(fmt), arg...)
+		l.Log(bytesToStringNonEmpty(fmt), arg...)
 	default:
-		l.Debug(stringNoCopyNonEmpty(fmt), arg...)
+		l.Debug(bytesToStringNonEmpty(fmt), arg...)
 	}
 
 	r.argbuf = arg
@@ -144,49 +134,6 @@ func newRequest() *request {
 		argbuf: make([]interface{}, 0, 10),
 	}
 }
-
-func stringNoCopyNonEmpty(b []byte) string {
-	return *(*string)(unsafe.Pointer(&reflect.StringHeader{
-		Data: uintptr(unsafe.Pointer(&b[0])),
-		Len:  len(b),
-	}))
-}
-
-func safeConvS2E(s *string) interface{} {
-	return *s
-}
-
-func safeConvI2E(i *int) interface{} {
-	return *i
-}
-
-func unsafeConvS2E(s *string) (v interface{}) {
-	e := (*eface)(unsafe.Pointer(&v))
-	e.t = stringType
-	e.v = unsafe.Pointer(s)
-	return
-}
-
-func unsafeConvI2E(i *int) (v interface{}) {
-	e := (*eface)(unsafe.Pointer(&v))
-	e.t = intType
-	e.v = unsafe.Pointer(i)
-	return
-}
-
-type eface struct {
-	t unsafe.Pointer
-	v unsafe.Pointer
-}
-
-func typeOf(v interface{}) unsafe.Pointer {
-	return (*eface)(unsafe.Pointer(&v)).t
-}
-
-var (
-	intType    = typeOf(0)
-	stringType = typeOf("")
-)
 
 func is4xx(status int) bool {
 	return status >= 400 && status <= 499

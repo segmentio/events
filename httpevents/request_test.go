@@ -9,18 +9,6 @@ import (
 )
 
 func BenchmarkRequestLog(b *testing.B) {
-	b.Run("safe", func(b *testing.B) {
-		benchmarkRequestLog(b)
-	})
-
-	b.Run("unsafe", func(b *testing.B) {
-		events.EnableUnsafeOptimizations = true
-		benchmarkRequestLog(b)
-		events.EnableUnsafeOptimizations = false
-	})
-}
-
-func benchmarkRequestLog(b *testing.B) {
 	r := newRequest()
 	r.laddr = "127.0.0.1:23456"
 	r.raddr = "127.0.0.1:80"

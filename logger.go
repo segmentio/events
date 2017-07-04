@@ -2,13 +2,11 @@ package events
 
 import (
 	"fmt"
-	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"unsafe"
 )
 
 // DefaultLogger is the default logger used by the Log function. This may be
@@ -121,10 +119,10 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 	s.fmt, s.e.Args = appendFormat(s.fmt, s.e.Args, format, args)
 	s.e.Args = append(s.e.Args, a...)
 
-	fmt.Fprintf(s, stringNoCopy(s.fmt), args...)
+	fmt.Fprintf(s, bytesToString(s.fmt), args...)
 
-	s.e.Message = stringNoCopy(s.msg)
-	s.e.Source = stringNoCopy(s.src)
+	s.e.Message = bytesToString(s.msg)
+	s.e.Source = bytesToString(s.src)
 	s.e.Debug = debug
 	s.e.Time = time.Now()
 
@@ -265,13 +263,3 @@ var (
 	// Prevents Go from doing a memory allocation when there is a missing argument.
 	missing interface{} = "MISSING"
 )
-
-func stringNoCopy(b []byte) string {
-	if len(b) == 0 {
-		return ""
-	}
-	return *(*string)(unsafe.Pointer(&reflect.StringHeader{
-		Data: uintptr(unsafe.Pointer(&b[0])),
-		Len:  len(b),
-	}))
-}
