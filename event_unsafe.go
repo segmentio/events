@@ -13,16 +13,15 @@ func cloneValue(v interface{}) interface{} {
 	// basically does the opposite and ensures that runtime.convT2E is called
 	// to generate new values to ensure no more pointers are shared by cloned
 	// events.
-	switch x := v.(type) {
-	case int:
-		return x
-	case string:
-		return x
-	}
-	return v
+	rv := reflect.ValueOf(v)
+	nv := reflect.New(rv.Type()).Elem()
+	nv.Set(rv)
+	return nv.Interface()
 }
 
 func bytesToString(b []byte) string {
+	// The conversion of a byte slice ot a string is ensured not to cause a
+	// dynamic memory allocation.
 	if len(b) == 0 {
 		return ""
 	}
@@ -30,4 +29,13 @@ func bytesToString(b []byte) string {
 		Data: uintptr(unsafe.Pointer(&b[0])),
 		Len:  len(b),
 	}))
+}
+
+func noescape(a []interface{}) (b []interface{}) {
+	// The use of unsafe.Pointer tricks the compiler into thinking that the
+	// content of the input slice doesn't escape, so we can prevent dynamic
+	// memory allocations that would otherwise happen for each argument of
+	// a log message.
+	*(*reflect.SliceHeader)(unsafe.Pointer(&b)) = *(*reflect.SliceHeader)(unsafe.Pointer(&a))
+	return
 }
