@@ -82,6 +82,7 @@ func TestHandler(t *testing.T) {
 			{"status", 202},
 			{"agent", "httpevents"},
 		},
+		Debug: true,
 	}) {
 		t.Errorf("%#v", e)
 	}

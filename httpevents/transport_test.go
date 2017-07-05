@@ -65,6 +65,7 @@ func TestTransport(t *testing.T) {
 			{"status", 200},
 			{"agent", "httpevents"},
 		},
+		Debug: true,
 	}) {
 		t.Errorf("%#v", e)
 	}
