@@ -35,7 +35,10 @@ func (e *Event) Clone() *Event {
 
 	if n := len(e.Args); n != 0 {
 		a = make(Args, n)
-		copy(a, e.Args)
+		for i := range a {
+			a[i].Name = e.Args[i].Name
+			a[i].Value = cloneValue(e.Args[i].Value)
+		}
 	}
 
 	if n := len(e.Message); n != 0 {

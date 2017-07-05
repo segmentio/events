@@ -2,13 +2,11 @@ package events
 
 import (
 	"fmt"
-	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"unsafe"
 )
 
 // DefaultLogger is the default logger used by the Log function. This may be
@@ -112,7 +110,7 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 	}
 
 	if n := len(args); n != 0 {
-		if s, ok := args[n-1].(Args); ok {
+		if s, ok := noescape(args)[n-1].(Args); ok {
 			a, args = s, args[:n-1]
 		}
 	}
@@ -121,10 +119,10 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 	s.fmt, s.e.Args = appendFormat(s.fmt, s.e.Args, format, args)
 	s.e.Args = append(s.e.Args, a...)
 
-	fmt.Fprintf(s, string(s.fmt), args...)
+	fmt.Fprintf(s, bytesToString(s.fmt), noescape(args)...)
 
-	s.e.Message = stringNoCopy(s.msg)
-	s.e.Source = stringNoCopy(s.src)
+	s.e.Message = bytesToString(s.msg)
+	s.e.Source = bytesToString(s.src)
 	s.e.Debug = debug
 	s.e.Time = time.Now()
 
@@ -200,7 +198,7 @@ var logPool = sync.Pool{
 }
 
 func appendFormat(dstFmt []byte, dstArgs Args, srcFmt string, srcArgs []interface{}) ([]byte, Args) {
-	for i, n := 0, len(srcFmt); i != n; {
+	for i, j, n := 0, 0, len(srcFmt); i != n; {
 		off := strings.IndexByte(srcFmt[i:], '%')
 		if off < 0 {
 			dstFmt = append(dstFmt, srcFmt[i:]...)
@@ -247,15 +245,16 @@ func appendFormat(dstFmt []byte, dstArgs Args, srcFmt string, srcArgs []interfac
 			}
 		}
 
-		if len(srcArgs) == 0 {
-			val = missing
-		} else {
-			val, srcArgs = srcArgs[0], srcArgs[1:]
-		}
-
 		if len(key) != 0 {
+			if j < len(srcArgs) {
+				val = noescape(srcArgs)[j]
+			} else {
+				val = missing
+			}
 			dstArgs = append(dstArgs, Arg{key, val})
 		}
+
+		j++
 	}
 
 	return dstFmt, dstArgs
@@ -265,13 +264,3 @@ var (
 	// Prevents Go from doing a memory allocation when there is a missing argument.
 	missing interface{} = "MISSING"
 )
-
-func stringNoCopy(b []byte) string {
-	if len(b) == 0 {
-		return ""
-	}
-	return *(*string)(unsafe.Pointer(&reflect.StringHeader{
-		Data: uintptr(unsafe.Pointer(&b[0])),
-		Len:  len(b),
-	}))
-}

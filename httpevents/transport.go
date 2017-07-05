@@ -24,12 +24,12 @@ type transport struct {
 }
 
 func (t *transport) RoundTrip(req *http.Request) (res *http.Response, err error) {
-	r := makeRequest(req, "*")
-
 	if res, err = t.RoundTripper.RoundTrip(req); res != nil {
+		r := acquireRequest(req, "*")
 		r.status = res.StatusCode
+		r.statusText = http.StatusText(res.StatusCode)
 		r.log(t.logger, 1)
+		releaseRequest(r)
 	}
-
 	return
 }

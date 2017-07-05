@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"net"
 	"net/http"
+	"sync"
 
 	"github.com/segmentio/events"
 )
@@ -28,13 +29,12 @@ func NewHandlerWith(logger *events.Logger, handler http.Handler) http.Handler {
 			laddr = value.String()
 		}
 
-		w := &responseWriter{
-			ResponseWriter: res,
-			// We capture all the values we need from req in case the object
-			// gets modified by the handler.
-			logger:  logger,
-			request: makeRequest(req, laddr),
-		}
+		w := responseWriterPool.Get().(*responseWriter)
+		// We capture all the values we need from req in case the object
+		// gets modified by the handler.
+		w.ResponseWriter = res
+		w.logger = logger
+		w.request.reset(req, laddr)
 
 		// If the handler panics we want to make sure we report the issue in the
 		// access log, while also ensuring that a response is going to be sent
@@ -42,8 +42,19 @@ func NewHandlerWith(logger *events.Logger, handler http.Handler) http.Handler {
 		// We don't silence the panic here tho and instead we forward it back to
 		// the parent handler which may need to be aware that a panic occurred.
 		defer func() {
-			if err := recover(); err != nil {
+			err := recover()
+
+			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
+			}
+
+			w.ResponseWriter = nil
+			w.logger = nil
+			w.wroteHeader = false
+			w.request.release()
+			responseWriterPool.Put(w)
+
+			if err != nil {
 				panic(err)
 			}
 		}()
@@ -91,6 +102,11 @@ func (w *responseWriter) log(depth int, status int) {
 	if logger := w.logger; logger != nil {
 		w.logger = nil
 		w.request.status = status
+		w.request.statusText = http.StatusText(status)
 		w.request.log(logger, depth+1)
 	}
+}
+
+var responseWriterPool = sync.Pool{
+	New: func() interface{} { return &responseWriter{} },
 }
