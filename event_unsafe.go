@@ -10,9 +10,7 @@ import (
 func cloneValue(v interface{}) interface{} {
 	// Some sub-packages use optimizations that hack the type system by sharing
 	// pointers to avoid generated calls to runtime.convT2E, this functions
-	// basically does the opposite and ensures that runtime.convT2E is called
-	// to generate new values to ensure no more pointers are shared by cloned
-	// events.
+	// basically does the opposite and ensures that a new value is created.
 	rv := reflect.ValueOf(v)
 	nv := reflect.New(rv.Type()).Elem()
 	nv.Set(rv)
