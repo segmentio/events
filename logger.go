@@ -177,11 +177,10 @@ func (l *Logger) With(args Args) *Logger {
 
 // logState is used to build events produced by Logger instances.
 type logState struct {
-	e    Event
-	fmt  []byte
-	msg  []byte
-	src  []byte
-	args []interface{}
+	e   Event
+	fmt []byte
+	msg []byte
+	src []byte
 }
 
 func (s *logState) Write(b []byte) (n int, err error) {
