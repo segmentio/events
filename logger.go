@@ -203,10 +203,11 @@ func (s *logState) Write(b []byte) (n int, err error) {
 var logPool = sync.Pool{
 	New: func() interface{} {
 		return &logState{
-			e:   Event{Args: make(Args, 0, 8)},
-			fmt: make([]byte, 0, 512),
-			msg: make([]byte, 0, 512),
-			src: make([]byte, 0, 512),
+			e:    Event{Args: make(Args, 0, 8)},
+			fmt:  make([]byte, 0, 512),
+			msg:  make([]byte, 0, 512),
+			src:  make([]byte, 0, 512),
+			args: make([]interface{}, 0, 8),
 		}
 	},
 }
