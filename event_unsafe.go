@@ -28,9 +28,3 @@ func bytesToString(b []byte) string {
 		Len:  len(b),
 	}))
 }
-
-func noescape(v interface{}) (u interface{}) {
-	type eface [2]uintptr
-	*(*eface)(unsafe.Pointer(&u)) = *(*eface)(unsafe.Pointer(&v))
-	return
-}
