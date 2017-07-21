@@ -128,6 +128,7 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 
 	h.HandleEvent(&s.e)
 
+	// don't hold pointers to let the garbage collector free the objects
 	for i := range s.e.Args {
 		s.e.Args[i] = Arg{}
 	}
