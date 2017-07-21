@@ -110,7 +110,7 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 	}
 
 	if n := len(args); n != 0 {
-		if s, ok := noescape(args)[n-1].(Args); ok {
+		if s, ok := noescape(args[n-1]).(Args); ok {
 			a, args = s, args[:n-1]
 		}
 	}
@@ -119,7 +119,11 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 	s.fmt, s.e.Args = appendFormat(s.fmt, s.e.Args, format, args)
 	s.e.Args = append(s.e.Args, a...)
 
-	fmt.Fprintf(s, bytesToString(s.fmt), noescape(args)...)
+	for _, v := range args {
+		s.args = append(s.args, noescape(v))
+	}
+
+	fmt.Fprintf(s, bytesToString(s.fmt), s.args...)
 
 	s.e.Message = bytesToString(s.msg)
 	s.e.Source = bytesToString(s.src)
@@ -128,6 +132,14 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 
 	h.HandleEvent(&s.e)
 
+	for i := range s.e.Args {
+		s.e.Args[i] = Arg{}
+	}
+
+	for i := range s.args {
+		s.args[i] = nil
+	}
+
 	s.e.Message = ""
 	s.e.Source = ""
 	s.e.Args = s.e.Args[:0]
@@ -135,6 +147,7 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 	s.fmt = s.fmt[:0]
 	s.msg = s.msg[:0]
 	s.src = s.src[:0]
+	s.args = s.args[:0]
 
 	logPool.Put(s)
 	return
@@ -174,10 +187,11 @@ func (l *Logger) With(args Args) *Logger {
 
 // logState is used to build events produced by Logger instances.
 type logState struct {
-	e   Event
-	fmt []byte
-	msg []byte
-	src []byte
+	e    Event
+	fmt  []byte
+	msg  []byte
+	src  []byte
+	args []interface{}
 }
 
 func (s *logState) Write(b []byte) (n int, err error) {
@@ -247,7 +261,7 @@ func appendFormat(dstFmt []byte, dstArgs Args, srcFmt string, srcArgs []interfac
 
 		if len(key) != 0 {
 			if j < len(srcArgs) {
-				val = noescape(srcArgs)[j]
+				val = noescape(srcArgs[j])
 			} else {
 				val = missing
 			}

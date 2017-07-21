@@ -21,4 +21,4 @@ test:
       --volume ${PWD}:/go/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
       --workdir /go/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
       segment/golang:latest
-      go.test='govendor test -v -race -cover +local && go test -v -cover -run TestSignalHandler ./sigevents'
+      go.test='CGO_ENABLED=0 GODEBUG=gccheckmark=1 GOTRACEBACK=crash GOGC=1 govendor test -v -race -cover +local && go test -v -cover -run TestSignalHandler ./sigevents'
