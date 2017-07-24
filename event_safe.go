@@ -9,7 +9,3 @@ func cloneValue(v interface{}) interface{} {
 func bytesToString(b []byte) string {
 	return string(b)
 }
-
-func noescape(a []interface{}) []interface{} {
-	return a
-}

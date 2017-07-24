@@ -14,18 +14,18 @@ func bytesToStringNonEmpty(b []byte) string {
 	}))
 }
 
-func convS2E(s *string) (v interface{}) {
-	e := (*eface)(unsafe.Pointer(&v))
-	e.t = stringType
-	e.v = unsafe.Pointer(s)
-	return
+func convS2E(s *string) interface{} {
+	return *(*interface{})(unsafe.Pointer(&eface{
+		t: stringType,
+		v: unsafe.Pointer(s),
+	}))
 }
 
-func convI2E(i *int) (v interface{}) {
-	e := (*eface)(unsafe.Pointer(&v))
-	e.t = intType
-	e.v = unsafe.Pointer(i)
-	return
+func convI2E(i *int) interface{} {
+	return *(*interface{})(unsafe.Pointer(&eface{
+		t: intType,
+		v: unsafe.Pointer(i),
+	}))
 }
 
 type eface struct {

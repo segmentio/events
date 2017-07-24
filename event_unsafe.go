@@ -28,12 +28,3 @@ func bytesToString(b []byte) string {
 		Len:  len(b),
 	}))
 }
-
-func noescape(a []interface{}) (b []interface{}) {
-	// The use of reflect.SliceHeader tricks the compiler into thinking that the
-	// content of the input slice doesn't escape, so we can prevent dynamic
-	// memory allocations that would otherwise happen for each argument of a log
-	// message.
-	*(*reflect.SliceHeader)(unsafe.Pointer(&b)) = *(*reflect.SliceHeader)(unsafe.Pointer(&a))
-	return
-}

@@ -110,7 +110,7 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 	}
 
 	if n := len(args); n != 0 {
-		if s, ok := noescape(args)[n-1].(Args); ok {
+		if s, ok := args[n-1].(Args); ok {
 			a, args = s, args[:n-1]
 		}
 	}
@@ -119,7 +119,7 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 	s.fmt, s.e.Args = appendFormat(s.fmt, s.e.Args, format, args)
 	s.e.Args = append(s.e.Args, a...)
 
-	fmt.Fprintf(s, bytesToString(s.fmt), noescape(args)...)
+	fmt.Fprintf(s, bytesToString(s.fmt), args...)
 
 	s.e.Message = bytesToString(s.msg)
 	s.e.Source = bytesToString(s.src)
@@ -127,6 +127,11 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 	s.e.Time = time.Now()
 
 	h.HandleEvent(&s.e)
+
+	// don't hold pointers to let the garbage collector free the objects
+	for i := range s.e.Args {
+		s.e.Args[i] = Arg{}
+	}
 
 	s.e.Message = ""
 	s.e.Source = ""
@@ -138,7 +143,6 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 
 	logPool.Put(s)
 	return
-
 }
 
 // Debug is like Log but only produces events if the logger has debugging
@@ -247,7 +251,7 @@ func appendFormat(dstFmt []byte, dstArgs Args, srcFmt string, srcArgs []interfac
 
 		if len(key) != 0 {
 			if j < len(srcArgs) {
-				val = noescape(srcArgs)[j]
+				val = srcArgs[j]
 			} else {
 				val = missing
 			}

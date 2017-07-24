@@ -2,6 +2,7 @@ package events
 
 import (
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 )
@@ -52,4 +53,34 @@ func TestArgs(t *testing.T) {
 			t.Error("%#v != %#v", a1, a2)
 		}
 	})
+}
+
+// This test is crafted to crash the program if some of the unsafe operations
+// perform illegal memory changes that mess up the GC state.
+//
+// Run it with CGO_ENABLED=0 GODEBUG=gccheckmark=1 GOTRACEBACK=crash GOGC=1
+func TestUnsafe(t *testing.T) {
+	logger := Logger{
+		Handler:     Discard,
+		EnableDebug: true,
+	}
+
+	wg := sync.WaitGroup{}
+
+	for i := 0; i != 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			for i := 0; i != 2000; i++ {
+				_ = make([]byte, 1024*1024)
+				var from = "Luke"
+				var to = "Han"
+				logger.Log("hello world: from=%{from}s, to=%{to}s", from, to)
+				time.Sleep(time.Millisecond)
+			}
+		}()
+	}
+
+	wg.Wait()
 }
