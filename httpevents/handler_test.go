@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/segmentio/events"
+	"github.com/segmentio/events/eventstest"
 )
 
 type writer struct {
@@ -36,7 +37,7 @@ func TestHandlerWriteOnce(t *testing.T) {
 }
 
 func TestHandler(t *testing.T) {
-	evList := []*events.Event{}
+	eventsHandler := &eventstest.Handler{}
 
 	req := httptest.NewRequest("GET", "/hello?answer=42", nil)
 	req.Header.Set("User-Agent", "httpevents")
@@ -49,21 +50,14 @@ func TestHandler(t *testing.T) {
 	}))
 
 	res := httptest.NewRecorder()
-	log := events.NewLogger(events.HandlerFunc(func(e *events.Event) {
-		evList = append(evList, e.Clone())
-	}))
+	log := events.NewLogger(eventsHandler)
 
 	h := NewHandlerWith(log, http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusAccepted)
 	}))
 	h.ServeHTTP(res, req)
 
-	if len(evList) != 1 {
-		t.Error("bad event count:", len(evList))
-		return
-	}
-
-	if e := *evList[0]; !equalEvents(e, events.Event{
+	eventsHandler.AssertEvents(t, events.Event{
 		Message: `127.0.0.1:80->127.0.0.1:56789 - www.github.com - GET /hello?answer=42#universe - 202 Accepted - "httpevents"`,
 		Args: events.Args{
 			{"local_address", "127.0.0.1:80"},
@@ -77,13 +71,11 @@ func TestHandler(t *testing.T) {
 			{"agent", "httpevents"},
 		},
 		Debug: true,
-	}) {
-		t.Errorf("%#v", e)
-	}
+	})
 }
 
 func TestHandlerPanic(t *testing.T) {
-	evList := []*events.Event{}
+	eventsHandler := &eventstest.Handler{}
 
 	req := httptest.NewRequest("POST", "/", nil)
 	req.Header.Set("User-Agent", "httpevents")
@@ -95,9 +87,7 @@ func TestHandlerPanic(t *testing.T) {
 	}))
 
 	res := httptest.NewRecorder()
-	log := events.NewLogger(events.HandlerFunc(func(e *events.Event) {
-		evList = append(evList, e.Clone())
-	}))
+	log := events.NewLogger(eventsHandler)
 
 	h := NewHandlerWith(log, http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		panic("bye bye!")
@@ -108,12 +98,7 @@ func TestHandlerPanic(t *testing.T) {
 		h.ServeHTTP(res, req)
 	}()
 
-	if len(evList) != 1 {
-		t.Error("bad event count:", len(evList))
-		return
-	}
-
-	if e := *evList[0]; !equalEvents(e, events.Event{
+	eventsHandler.AssertEvents(t, events.Event{
 		Message: `127.0.0.1:80->127.0.0.1:56789 - www.github.com - POST / - 500 Internal Server Error - "httpevents"`,
 		Args: events.Args{
 			{"local_address", "127.0.0.1:80"},
@@ -124,9 +109,7 @@ func TestHandlerPanic(t *testing.T) {
 			{"status", 500},
 			{"agent", "httpevents"},
 		},
-	}) {
-		t.Errorf("%#v", e)
-	}
+	})
 }
 
 func BenchmarkHandler(b *testing.B) {
