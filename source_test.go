@@ -15,7 +15,7 @@ func TestSourceForPC(t *testing.T) {
 		t.Error("bad file:", file)
 	}
 
-	if line != 12 {
+	if line != 10 {
 		t.Error("bad line:", line)
 	}
 }
