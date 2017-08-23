@@ -3,11 +3,10 @@ package log
 import (
 	"bytes"
 	"io/ioutil"
-	"reflect"
 	"testing"
-	"time"
 
 	"github.com/segmentio/events"
+	"github.com/segmentio/events/eventstest"
 )
 
 func TestNewLogger(t *testing.T) {
@@ -119,26 +118,12 @@ func TestNewLogger(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
-			result := []*events.Event{}
-			logger := NewLogger(test.prefix, test.flags, events.HandlerFunc(func(e *events.Event) {
-				result = append(result, e.Clone())
-			}))
+			h := &eventstest.Handler{}
+
+			logger := NewLogger(test.prefix, test.flags, h)
 			logger.Printf(test.format, test.args...)
 
-			if len(result) != 1 {
-				t.Error("bad events count:", result)
-				return
-			}
-
-			t.Logf("%#v", *result[0])
-
-			// unpredictable values
-			result[0].Source = ""
-			result[0].Time = time.Time{}
-
-			if !reflect.DeepEqual(*result[0], test.event) {
-				t.Error("bad event")
-			}
+			h.AssertEvents(t, test.event)
 		})
 	}
 }

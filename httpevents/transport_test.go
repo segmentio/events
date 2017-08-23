@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/segmentio/events"
+	"github.com/segmentio/events/eventstest"
 )
 
 func TestTransport(t *testing.T) {
@@ -17,10 +18,8 @@ func TestTransport(t *testing.T) {
 	}))
 	defer server.Close()
 
-	evList := []*events.Event{}
-	logger := events.NewLogger(events.HandlerFunc(func(e *events.Event) {
-		evList = append(evList, e.Clone())
-	}))
+	h := &eventstest.Handler{}
+	logger := events.NewLogger(h)
 
 	transport := NewTransportWith(logger, http.DefaultTransport)
 
@@ -43,12 +42,7 @@ func TestTransport(t *testing.T) {
 		t.Error("bad response:", s)
 	}
 
-	if len(evList) != 1 {
-		t.Error("bad event count:", evList)
-		return
-	}
-
-	if e := *evList[0]; !equalEvents(e, events.Event{
+	h.AssertEvents(t, events.Event{
 		Message: fmt.Sprintf(`*->192.0.2.1:1234 - %s - GET / - 200 OK - "httpevents"`, req.Host),
 		Args: events.Args{
 			{"local_address", "*"},
@@ -60,7 +54,5 @@ func TestTransport(t *testing.T) {
 			{"agent", "httpevents"},
 		},
 		Debug: true,
-	}) {
-		t.Errorf("%#v", e)
-	}
+	})
 }
