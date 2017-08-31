@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"runtime"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -163,14 +165,26 @@ func (st stackTrace) EncodeValue(e objconv.Encoder) error {
 
 	err := e.EncodeArray(len(st), func(e objconv.Encoder) error {
 		f.buffer.Reset()
-		file, line := events.SourceForPC(uintptr(st[i]))
+		pc := uintptr(st[i])
+		file, line := events.SourceForPC(pc)
 		i++
-		fmt.Fprintf(&f.buffer, "%s:%d", file, line)
+		fmt.Fprintf(&f.buffer, "%s:%d:%s", file, line, funcName(file, pc))
 		return e.Encode(stringNoCopy(f.buffer.b))
 	})
 
 	fmtPool.Put(f)
 	return err
+}
+
+func funcName(file string, pc uintptr) string {
+	callers := [1]uintptr{pc}
+	frames := runtime.CallersFrames(callers[:])
+	f, _ := frames.Next()
+	name := f.Function
+	if i := strings.LastIndexByte(name, '/'); i >= 0 {
+		name = name[i+1:]
+	}
+	return name
 }
 
 // The formatter type carries the state used during a single event formatting

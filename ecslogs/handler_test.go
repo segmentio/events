@@ -43,7 +43,7 @@ func TestHandler(t *testing.T) {
 		b.Reset()
 		h.HandleEvent(e)
 
-		if s := b.String(); s != `{"level":"ERROR","time":"2017-01-01T23:42:00.123Z","info":{"source":"github.com/segmentio/events/ecslogs/handler_test.go:19","errors":[{"type":"*errors.errorString","error":"EOF","stack":["github.com/segmentio/events/ecslogs/handler_test.go:41","testing/testing.go:657","runtime/asm_amd64.s:2197"]}]},"data":{"name":"Luke","from":"Han"},"message":"Hello Luke!"}
+		if s := b.String(); s != `{"level":"ERROR","time":"2017-01-01T23:42:00.123Z","info":{"source":"github.com/segmentio/events/ecslogs/handler_test.go:19","errors":[{"type":"*errors.errorString","error":"EOF","stack":["github.com/segmentio/events/ecslogs/handler_test.go:41:ecslogs.TestHandler.func1","testing/testing.go:746:testing.tRunner","runtime/asm_amd64.s:2337:runtime.goexit"]}]},"data":{"name":"Luke","from":"Han"},"message":"Hello Luke!"}
 ` {
 			// This test is sensitive, it may break if the Go version changes or
 			// if this file is edited (because the number of lines may not be
