@@ -31,6 +31,7 @@ func TestTransport(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	defer res.Body.Close()
 
 	b, err := ioutil.ReadAll(res.Body)
 	if err != nil {
