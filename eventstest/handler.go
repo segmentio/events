@@ -40,7 +40,7 @@ func (h *Handler) AssertEvents(t testing.TB, expectedEvents ...events.Event) {
 		got := h.evList[i]
 		expected := expectedEvents[i]
 		if !assertEqualEvent(t, got, expected) {
-			t.Errorf("expected event %+v at index %s but got %+v", expected, i, got)
+			t.Errorf("expected event %+v at index %d but got %+v", expected, i, got)
 			return
 		}
 	}

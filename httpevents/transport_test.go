@@ -51,7 +51,7 @@ func TestTransport(t *testing.T) {
 			{"method", "GET"},
 			{"path", "/"},
 			{"status", 200},
-			{"agent", "httpevents"},
+			{"headers", &headerList{{"User-Agent", "httpevents"}}},
 		},
 		Debug: true,
 	})

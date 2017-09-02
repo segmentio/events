@@ -2,6 +2,7 @@ package httpevents
 
 import (
 	"net/http"
+	"sort"
 	"sync"
 
 	"github.com/segmentio/events"
@@ -21,6 +22,7 @@ type request struct {
 	query      string
 	fragment   string
 	agent      string
+	headers    headerList
 	status     int
 	statusText string
 	fmtbuf     []byte
@@ -54,6 +56,10 @@ func (r *request) release() {
 	r.status = 0
 	r.statusText = zero
 
+	for i := range r.headers {
+		r.headers[i] = header{}
+	}
+
 	for i := range r.argbuf {
 		r.argbuf[i] = nil
 	}
@@ -78,7 +84,30 @@ func (r *request) reset(req *http.Request, laddr string) {
 	r.query = req.URL.RawQuery
 	r.fragment = req.URL.Fragment
 	r.agent = req.UserAgent()
+
+	if r.headers == nil {
+		r.headers = make(headerList, 0, len(req.Header))
+	} else {
+		r.headers = r.headers[:0]
+	}
+
+	for name, values := range req.Header {
+		for _, value := range values {
+			r.headers = append(r.headers, header{
+				name:  name,
+				value: value,
+			})
+		}
+	}
+
+	sort.Sort(r)
 }
+
+// Implement sort.Interface to sort the list of headers without requiring an
+// extra malloc when converting to an interface.
+func (r *request) Len() int               { return len(r.headers) }
+func (r *request) Less(i int, j int) bool { return r.headers[i].name < r.headers[j].name }
+func (r *request) Swap(i int, j int)      { r.headers[i], r.headers[j] = r.headers[j], r.headers[i] }
 
 func (r *request) log(logger *events.Logger, depth int) {
 	arg := append(r.argbuf[:0], convS2E(&r.laddr), convS2E(&r.raddr), convS2E(&r.host), convS2E(&r.method))
@@ -104,8 +133,12 @@ func (r *request) log(logger *events.Logger, depth int) {
 		fmt = append(fmt, "#%{fragment}s"...)
 		arg = append(arg, convS2E(&r.fragment))
 	}
-	fmt = append(fmt, " - %{status}d %s - %{agent}q"...)
+	fmt = append(fmt, " - %{status}d %s - %q"...)
 	arg = append(arg, convI2E(&r.status), convS2E(&r.statusText), convS2E(&r.agent))
+	arg = append(arg, events.Args{{
+		Name:  "headers",
+		Value: &r.headers,
+	}})
 
 	// Adjust the call depth so we can track the caller of the handler or the
 	// transport outside of the httpevents package.

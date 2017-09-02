@@ -68,7 +68,7 @@ func TestHandler(t *testing.T) {
 			{"query", "answer=42"},
 			{"fragment", "universe"},
 			{"status", 202},
-			{"agent", "httpevents"},
+			{"headers", &headerList{{"User-Agent", "httpevents"}}},
 		},
 		Debug: true,
 	})
@@ -107,7 +107,7 @@ func TestHandlerPanic(t *testing.T) {
 			{"method", "POST"},
 			{"path", "/"},
 			{"status", 500},
-			{"agent", "httpevents"},
+			{"headers", &headerList{{"User-Agent", "httpevents"}}},
 		},
 	})
 }
