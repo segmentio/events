@@ -13,6 +13,7 @@ import (
 
 func TestTransport(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		res.Header().Set("Date", "today")
 		res.WriteHeader(http.StatusOK)
 		res.Write([]byte("Hello World!"))
 	}))
@@ -52,7 +53,14 @@ func TestTransport(t *testing.T) {
 			{"method", "GET"},
 			{"path", "/"},
 			{"status", 200},
-			{"headers", &headerList{{"User-Agent", "httpevents"}}},
+			{"request-headers", &headerList{
+				{"User-Agent", "httpevents"},
+			}},
+			{"response-headers", &headerList{
+				{"Content-Length", "12"},
+				{"Content-Type", "text/plain; charset=utf-8"},
+				{"Date", "today"},
+			}},
 		},
 		Debug: true,
 	})

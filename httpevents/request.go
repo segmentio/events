@@ -2,7 +2,6 @@ package httpevents
 
 import (
 	"net/http"
-	"sort"
 	"sync"
 
 	"github.com/segmentio/events"
@@ -22,7 +21,8 @@ type request struct {
 	query      string
 	fragment   string
 	agent      string
-	headers    headerList
+	reqHeaders headerList
+	resHeaders headerList
 	extraArgs  events.Args
 	status     int
 	statusText string
@@ -56,10 +56,8 @@ func (r *request) release() {
 	r.agent = zero
 	r.status = 0
 	r.statusText = zero
-
-	for i := range r.headers {
-		r.headers[i] = header{}
-	}
+	r.reqHeaders.clear()
+	r.resHeaders.clear()
 
 	for i := range r.argbuf {
 		r.argbuf[i] = nil
@@ -85,37 +83,22 @@ func (r *request) reset(req *http.Request, laddr string) {
 	r.query = req.URL.RawQuery
 	r.fragment = req.URL.Fragment
 	r.agent = req.UserAgent()
-
-	if r.headers == nil {
-		r.headers = make(headerList, 0, len(req.Header))
-	} else {
-		r.headers = r.headers[:0]
-	}
-
-	for name, values := range req.Header {
-		for _, value := range values {
-			r.headers = append(r.headers, header{
-				name:  name,
-				value: value,
-			})
-		}
-	}
-
-	sort.Sort(r)
-
-	r.extraArgs = append(r.extraArgs[:0], events.Arg{
-		Name:  "headers",
-		Value: &r.headers,
-	})
+	r.reqHeaders.set(req.Header)
 }
 
-// Implement sort.Interface to sort the list of headers without requiring an
-// extra malloc when converting to an interface.
-func (r *request) Len() int               { return len(r.headers) }
-func (r *request) Less(i int, j int) bool { return r.headers[i].name < r.headers[j].name }
-func (r *request) Swap(i int, j int)      { r.headers[i], r.headers[j] = r.headers[j], r.headers[i] }
+func (r *request) log(logger *events.Logger, resHeader http.Header, depth int) {
+	r.resHeaders.set(resHeader)
+	r.extraArgs = append(r.extraArgs[:0],
+		events.Arg{
+			Name:  "request-headers",
+			Value: &r.reqHeaders,
+		},
+		events.Arg{
+			Name:  "response-headers",
+			Value: &r.resHeaders,
+		},
+	)
 
-func (r *request) log(logger *events.Logger, depth int) {
 	arg := append(r.argbuf[:0], convS2E(&r.laddr), convS2E(&r.raddr), convS2E(&r.host), convS2E(&r.method))
 	fmt := append(r.logbuf[:0], "%{local_address}s->%{remote_address}s - %{host}s - %{method}s"...)
 

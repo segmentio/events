@@ -103,7 +103,7 @@ func (w *responseWriter) log(depth int, status int) {
 		w.logger = nil
 		w.request.status = status
 		w.request.statusText = http.StatusText(status)
-		w.request.log(logger, depth+1)
+		w.request.log(logger, w.ResponseWriter.Header(), depth+1)
 	}
 }
 
