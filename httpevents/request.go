@@ -23,6 +23,7 @@ type request struct {
 	fragment   string
 	agent      string
 	headers    headerList
+	extraArgs  events.Args
 	status     int
 	statusText string
 	fmtbuf     []byte
@@ -101,6 +102,11 @@ func (r *request) reset(req *http.Request, laddr string) {
 	}
 
 	sort.Sort(r)
+
+	r.extraArgs = append(r.extraArgs[:0], events.Arg{
+		Name:  "headers",
+		Value: &r.headers,
+	})
 }
 
 // Implement sort.Interface to sort the list of headers without requiring an
@@ -135,10 +141,7 @@ func (r *request) log(logger *events.Logger, depth int) {
 	}
 	fmt = append(fmt, " - %{status}d %s - %q"...)
 	arg = append(arg, convI2E(&r.status), convS2E(&r.statusText), convS2E(&r.agent))
-	arg = append(arg, events.Args{{
-		Name:  "headers",
-		Value: &r.headers,
-	}})
+	arg = append(arg, convA2E(&r.extraArgs))
 
 	// Adjust the call depth so we can track the caller of the handler or the
 	// transport outside of the httpevents package.

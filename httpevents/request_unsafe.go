@@ -5,6 +5,8 @@ package httpevents
 import (
 	"reflect"
 	"unsafe"
+
+	"github.com/segmentio/events"
 )
 
 func bytesToStringNonEmpty(b []byte) string {
@@ -15,16 +17,21 @@ func bytesToStringNonEmpty(b []byte) string {
 }
 
 func convS2E(s *string) interface{} {
-	return *(*interface{})(unsafe.Pointer(&eface{
-		t: stringType,
-		v: unsafe.Pointer(s),
-	}))
+	return convT2E(stringType, unsafe.Pointer(s))
 }
 
 func convI2E(i *int) interface{} {
+	return convT2E(intType, unsafe.Pointer(i))
+}
+
+func convA2E(a *events.Args) interface{} {
+	return convT2E(argsType, unsafe.Pointer(a))
+}
+
+func convT2E(t unsafe.Pointer, v unsafe.Pointer) interface{} {
 	return *(*interface{})(unsafe.Pointer(&eface{
-		t: intType,
-		v: unsafe.Pointer(i),
+		t: t,
+		v: v,
 	}))
 }
 
@@ -40,4 +47,5 @@ func typeOf(v interface{}) unsafe.Pointer {
 var (
 	intType    = typeOf(0)
 	stringType = typeOf("")
+	argsType   = typeOf((events.Args)(nil))
 )
