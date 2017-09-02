@@ -53,10 +53,10 @@ func TestTransport(t *testing.T) {
 			{"method", "GET"},
 			{"path", "/"},
 			{"status", 200},
-			{"request-headers", &headerList{
+			{"request", &headerList{
 				{"User-Agent", "httpevents"},
 			}},
-			{"response-headers", &headerList{
+			{"response", &headerList{
 				{"Content-Length", "12"},
 				{"Content-Type", "text/plain; charset=utf-8"},
 				{"Date", "today"},

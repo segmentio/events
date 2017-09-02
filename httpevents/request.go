@@ -90,11 +90,11 @@ func (r *request) log(logger *events.Logger, resHeader http.Header, depth int) {
 	r.resHeaders.set(resHeader)
 	r.extraArgs = append(r.extraArgs[:0],
 		events.Arg{
-			Name:  "request-headers",
+			Name:  "request",
 			Value: &r.reqHeaders,
 		},
 		events.Arg{
-			Name:  "response-headers",
+			Name:  "response",
 			Value: &r.resHeaders,
 		},
 	)
