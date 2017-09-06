@@ -37,7 +37,7 @@ func (e *Event) Clone() *Event {
 		a = make(Args, n)
 		for i := range a {
 			a[i].Name = e.Args[i].Name
-			a[i].Value = cloneValue(e.Args[i].Value)
+			a[i].Value = clone(e.Args[i].Value)
 		}
 	}
 
@@ -58,6 +58,17 @@ func (e *Event) Clone() *Event {
 		Time:    e.Time,
 		Debug:   e.Debug,
 	}
+}
+
+type cloner interface {
+	Clone() interface{}
+}
+
+func clone(v interface{}) interface{} {
+	if c, ok := v.(cloner); ok {
+		return c.Clone()
+	}
+	return cloneValue(v)
 }
 
 // Args reprsents a list of event arguments.

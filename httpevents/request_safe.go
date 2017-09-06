@@ -2,6 +2,8 @@
 
 package httpevents
 
+import "github.com/segmentio/events"
+
 func bytesToStringNonEmpty(b []byte) string {
 	return string(b)
 }
@@ -12,4 +14,8 @@ func convS2E(s *string) interface{} {
 
 func convI2E(i *int) interface{} {
 	return *i
+}
+
+func convA2E(a *events.Args) interface{} {
+	return *a
 }

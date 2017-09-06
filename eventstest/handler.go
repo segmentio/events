@@ -40,7 +40,9 @@ func (h *Handler) AssertEvents(t testing.TB, expectedEvents ...events.Event) {
 		got := h.evList[i]
 		expected := expectedEvents[i]
 		if !assertEqualEvent(t, got, expected) {
-			t.Errorf("expected event %+v at index %s but got %+v", expected, i, got)
+			t.Error("bad events at index", i)
+			t.Log("expected =>", expected)
+			t.Log("got ======>", got)
 			return
 		}
 	}
@@ -54,7 +56,9 @@ func assertEqualEvent(t testing.TB, got, expected events.Event) bool {
 
 func assertEqualField(t testing.TB, field string, got, expected interface{}) bool {
 	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("expected .%s to be %v but got %v", field, expected, got)
+		t.Errorf("bad .%s:", field)
+		t.Log("expected =>", expected)
+		t.Log("got ======>", got)
 		return false
 	}
 	return true

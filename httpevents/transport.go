@@ -28,7 +28,7 @@ func (t *transport) RoundTrip(req *http.Request) (res *http.Response, err error)
 		r := acquireRequest(req, "*")
 		r.status = res.StatusCode
 		r.statusText = http.StatusText(res.StatusCode)
-		r.log(t.logger, 1)
+		r.log(t.logger, res.Header, 1)
 		releaseRequest(r)
 	}
 	return

@@ -21,6 +21,9 @@ type request struct {
 	query      string
 	fragment   string
 	agent      string
+	reqHeaders headerList
+	resHeaders headerList
+	extraArgs  events.Args
 	status     int
 	statusText string
 	fmtbuf     []byte
@@ -53,6 +56,8 @@ func (r *request) release() {
 	r.agent = zero
 	r.status = 0
 	r.statusText = zero
+	r.reqHeaders.clear()
+	r.resHeaders.clear()
 
 	for i := range r.argbuf {
 		r.argbuf[i] = nil
@@ -78,9 +83,22 @@ func (r *request) reset(req *http.Request, laddr string) {
 	r.query = req.URL.RawQuery
 	r.fragment = req.URL.Fragment
 	r.agent = req.UserAgent()
+	r.reqHeaders.set(req.Header)
 }
 
-func (r *request) log(logger *events.Logger, depth int) {
+func (r *request) log(logger *events.Logger, resHeader http.Header, depth int) {
+	r.resHeaders.set(resHeader)
+	r.extraArgs = append(r.extraArgs[:0],
+		events.Arg{
+			Name:  "request",
+			Value: &r.reqHeaders,
+		},
+		events.Arg{
+			Name:  "response",
+			Value: &r.resHeaders,
+		},
+	)
+
 	arg := append(r.argbuf[:0], convS2E(&r.laddr), convS2E(&r.raddr), convS2E(&r.host), convS2E(&r.method))
 	fmt := append(r.logbuf[:0], "%{local_address}s->%{remote_address}s - %{host}s - %{method}s"...)
 
@@ -104,8 +122,9 @@ func (r *request) log(logger *events.Logger, depth int) {
 		fmt = append(fmt, "#%{fragment}s"...)
 		arg = append(arg, convS2E(&r.fragment))
 	}
-	fmt = append(fmt, " - %{status}d %s - %{agent}q"...)
+	fmt = append(fmt, " - %{status}d %s - %q"...)
 	arg = append(arg, convI2E(&r.status), convS2E(&r.statusText), convS2E(&r.agent))
+	arg = append(arg, convA2E(&r.extraArgs))
 
 	// Adjust the call depth so we can track the caller of the handler or the
 	// transport outside of the httpevents package.
