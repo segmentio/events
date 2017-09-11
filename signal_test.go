@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"reflect"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -116,4 +117,22 @@ func TestWithSignals(t *testing.T) {
 			t.Error("the parent error wasn't reported:", err)
 		}
 	})
+}
+
+func TestIsTermination(t *testing.T) {
+	if !IsTermination(&SignalError{Signal: syscall.SIGTERM}) {
+		t.Error("SIGTERM wasn't recognized as a termination error")
+	}
+	if IsTermination(&SignalError{Signal: syscall.SIGINT}) {
+		t.Error("SIGINT was mistakenly recognized as a termination error")
+	}
+}
+
+func TestIsInterruption(t *testing.T) {
+	if !IsInterruption(&SignalError{Signal: syscall.SIGINT}) {
+		t.Error("SIGINT wasn't recognized as a interruption error")
+	}
+	if IsInterruption(&SignalError{Signal: syscall.SIGTERM}) {
+		t.Error("SIGTERM was mistakenly recognized as a interruption error")
+	}
 }

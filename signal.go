@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 )
 
@@ -134,4 +135,33 @@ func (s *signalCtx) cancel(err error) {
 		s.err.Store(err)
 		close(s.done)
 	})
+}
+
+// IsSignal returns true if the given error is a *SignalError that was
+// generated upon receipt of one of the given signals. If no signal is
+// passed, the function only tests for err to be of type *SginalError.
+func IsSignal(err error, signals ...os.Signal) bool {
+	if e, ok := err.(*SignalError); ok {
+		if len(signals) == 0 {
+			return true
+		}
+		for _, signal := range signals {
+			if signal == e.Signal {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// IsTermination returns true if the given error was caused by receiving a
+// termination signal.
+func IsTermination(err error) bool {
+	return IsSignal(err, syscall.SIGTERM)
+}
+
+// IsInterruption returns true if the given error was caused by receiving an
+// interruption signal.
+func IsInterruption(err error) bool {
+	return IsSignal(err, syscall.SIGINT)
 }
