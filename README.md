@@ -74,6 +74,9 @@ func main() {
 }
 ```
 
+Note that using the extended syntax is optional and the regular `fmt` format
+is supported as well.
+
 ### Compatibility with the standard library
 
 The standard `log` package doesn't give much flexibility when it comes to its
