@@ -52,6 +52,28 @@ the needs of most programs. The `Log` and `Debug` functions support fmt-style
 formatting but augment the syntax with features that make it simpler to generate
 meaningful events. Refer to the package's documentation to learn more about it.
 
+### Log message formatting
+
+The `events` package supports a superset of the `fmt` formatting language. The
+percent-base notation for placeholders is enhanced to automatically generated
+event arguments from values passed to the call to `Log` or `Debug` functions.
+This works by inserting an argument name wrapped in braces (`{}`) between the
+`%` sign and the verb of the format.
+
+For example, this piece of code generates an event that has an argument named
+"name" and a value named "Luke":
+```go
+package main
+
+import (
+    "github.com/segmentio/events"
+)
+
+func main() {
+    events.Log("Hello %{name}s!", "Luke")
+}
+```
+
 ### Compatibility with the standard library
 
 The standard `log` package doesn't give much flexibility when it comes to its
@@ -95,6 +117,32 @@ level to *DEBUG*.
 These rules allow for the best of both worlds, giving the program a small and
 expressive API to produce events while maintaining compatibility with our
 existing tools.
+
+#### DEBUG/INFO/ERRORS
+
+The events package has two main log levels (`events.Log` and `events.Debug`),
+but the `ecslogs` subpackage will automatically extract error values in the
+event arguments, generate _ERROR_ level messages, and put the error and stack
+trace (if any is available) into the event data.
+
+For example, this code will output a structured log message with _ERROR_ level.
+```go
+package main
+
+import (
+    "errors"
+    "os"
+
+    "github.com/segmetio/events"
+    "github.com/segmetio/events/ecslogs"
+)
+
+func main() {
+    events.DefaultHandler = ecslogs.NewHandler(os.Stdout)
+    events.Log("something went wrong: %{error}v", errors.New("oops!"))
+}
+```
+
 
 ### Automatic Configuration
 
