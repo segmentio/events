@@ -105,3 +105,18 @@ does the opposite.
 This approach mimics what we've achieved in many parts of our software stack and
 has proven to be good defaults, doing the right thing whether the program is
 dealing with a production or development environment.
+
+Here's a code example that is commonly used to configure the events package:
+```go
+package main
+
+import (
+    "github.com/segmetio/events"
+    _ "github.com/segmetio/events/ecslogs"
+    _ "github.com/segmetio/events/text"
+)
+
+func main() {
+    events.Log("enjoy!")
+}
+```
