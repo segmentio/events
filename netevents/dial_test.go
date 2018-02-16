@@ -48,11 +48,11 @@ func TestDialFunc(t *testing.T) {
 	if !reflect.DeepEqual(e1, events.Event{
 		Message: "127.0.0.1:56789->127.0.0.1:80 - opening client tcp connection",
 		Args: events.Args{
-			{"local_address", "127.0.0.1:56789"},
-			{"remote_address", "127.0.0.1:80"},
-			{"event", "opening"},
-			{"type", "client"},
-			{"protocol", "tcp"},
+			{Name: "local_address", Value: "127.0.0.1:56789"},
+			{Name: "remote_address", Value: "127.0.0.1:80"},
+			{Name: "event", Value: "opening"},
+			{Name: "type", Value: "client"},
+			{Name: "protocol", Value: "tcp"},
 		},
 	}) {
 		t.Error("bad opening event")
@@ -61,11 +61,11 @@ func TestDialFunc(t *testing.T) {
 	if !reflect.DeepEqual(e2, events.Event{
 		Message: "127.0.0.1:56789->127.0.0.1:80 - closing client tcp connection",
 		Args: events.Args{
-			{"local_address", "127.0.0.1:56789"},
-			{"remote_address", "127.0.0.1:80"},
-			{"event", "closing"},
-			{"type", "client"},
-			{"protocol", "tcp"},
+			{Name: "local_address", Value: "127.0.0.1:56789"},
+			{Name: "remote_address", Value: "127.0.0.1:80"},
+			{Name: "event", Value: "closing"},
+			{Name: "type", Value: "client"},
+			{Name: "protocol", Value: "tcp"},
 		},
 	}) {
 		t.Error("bad closing event")

@@ -47,19 +47,19 @@ func TestTransport(t *testing.T) {
 	h.AssertEvents(t, events.Event{
 		Message: fmt.Sprintf(`*->192.0.2.1:1234 - %s - GET / - 200 OK - "httpevents"`, req.Host),
 		Args: events.Args{
-			{"local_address", "*"},
-			{"remote_address", "192.0.2.1:1234"},
-			{"host", req.Host},
-			{"method", "GET"},
-			{"path", "/"},
-			{"status", 200},
-			{"request", &headerList{
-				{"User-Agent", "httpevents"},
+			{Name: "local_address", Value: "*"},
+			{Name: "remote_address", Value: "192.0.2.1:1234"},
+			{Name: "host", Value: req.Host},
+			{Name: "method", Value: "GET"},
+			{Name: "path", Value: "/"},
+			{Name: "status", Value: 200},
+			{Name: "request", Value: &headerList{
+				{name: "User-Agent", value: "httpevents"},
 			}},
-			{"response", &headerList{
-				{"Content-Length", "12"},
-				{"Content-Type", "text/plain; charset=utf-8"},
-				{"Date", "today"},
+			{Name: "response", Value: &headerList{
+				{name: "Content-Length", value: "12"},
+				{name: "Content-Type", value: "text/plain; charset=utf-8"},
+				{name: "Date", value: "today"},
 			}},
 		},
 		Debug: true,

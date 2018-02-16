@@ -51,32 +51,32 @@ func TestListener(t *testing.T) {
 		&events.Event{
 			Message: fmt.Sprintf("%s->%s - opening server tcp connection", laddr, raddr),
 			Args: events.Args{
-				{"local_address", laddr},
-				{"remote_address", raddr},
-				{"event", "opening"},
-				{"type", "server"},
-				{"protocol", "tcp"},
+				{Name: "local_address", Value: laddr},
+				{Name: "remote_address", Value: raddr},
+				{Name: "event", Value: "opening"},
+				{Name: "type", Value: "server"},
+				{Name: "protocol", Value: "tcp"},
 			},
 		},
 
 		&events.Event{
 			Message: fmt.Sprintf("%s->%s - closing server tcp connection", laddr, raddr),
 			Args: events.Args{
-				{"local_address", laddr},
-				{"remote_address", raddr},
-				{"event", "closing"},
-				{"type", "server"},
-				{"protocol", "tcp"},
+				{Name: "local_address", Value: laddr},
+				{Name: "remote_address", Value: raddr},
+				{Name: "event", Value: "closing"},
+				{Name: "type", Value: "server"},
+				{Name: "protocol", Value: "tcp"},
 			},
 		},
 
 		&events.Event{
 			Message: fmt.Sprintf("%s - shutting down server tcp socket", saddr),
 			Args: events.Args{
-				{"local_address", saddr},
-				{"event", "shutting down"},
-				{"type", "server"},
-				{"protocol", "tcp"},
+				{Name: "local_address", Value: saddr},
+				{Name: "event", Value: "shutting down"},
+				{Name: "type", Value: "server"},
+				{Name: "protocol", Value: "tcp"},
 			},
 			Debug: true,
 		},

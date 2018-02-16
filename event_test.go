@@ -50,7 +50,7 @@ func TestArgs(t *testing.T) {
 		SortArgs(a2)
 
 		if !reflect.DeepEqual(a1, a2) {
-			t.Error("%#v != %#v", a1, a2)
+			t.Errorf("%#v != %#v", a1, a2)
 		}
 	})
 }

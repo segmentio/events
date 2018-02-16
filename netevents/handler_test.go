@@ -22,29 +22,29 @@ func TestHandler(t *testing.T) {
 	handler := NewHandlerWith(logger, &testHandler{})
 
 	handler.ServeConn(context.Background(), mockConn{
-		laddr: mockAddr{"127.0.0.1:80", "tcp"},
-		raddr: mockAddr{"127.0.0.1:56789", "tcp"},
+		laddr: mockAddr{s: "127.0.0.1:80", n: "tcp"},
+		raddr: mockAddr{s: "127.0.0.1:56789", n: "tcp"},
 	})
 
 	e1 := events.Event{
 		Message: "127.0.0.1:80->127.0.0.1:56789 - opening server tcp connection",
 		Args: events.Args{
-			{"local_address", "127.0.0.1:80"},
-			{"remote_address", "127.0.0.1:56789"},
-			{"event", "opening"},
-			{"type", "server"},
-			{"protocol", "tcp"},
+			{Name: "local_address", Value: "127.0.0.1:80"},
+			{Name: "remote_address", Value: "127.0.0.1:56789"},
+			{Name: "event", Value: "opening"},
+			{Name: "type", Value: "server"},
+			{Name: "protocol", Value: "tcp"},
 		},
 	}
 
 	e2 := events.Event{
 		Message: "127.0.0.1:80->127.0.0.1:56789 - closing server tcp connection",
 		Args: events.Args{
-			{"local_address", "127.0.0.1:80"},
-			{"remote_address", "127.0.0.1:56789"},
-			{"event", "closing"},
-			{"type", "server"},
-			{"protocol", "tcp"},
+			{Name: "local_address", Value: "127.0.0.1:80"},
+			{Name: "remote_address", Value: "127.0.0.1:56789"},
+			{Name: "event", Value: "closing"},
+			{Name: "type", Value: "server"},
+			{Name: "protocol", Value: "tcp"},
 		},
 	}
 

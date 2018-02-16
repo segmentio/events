@@ -11,14 +11,14 @@ func TestHandler(t *testing.T) {
 	logger := events.NewLogger(h)
 
 	logger.Log("Hello %{name}s!", "Luke", events.Args{
-		{"from", "Han"},
+		{Name: "from", Value: "Han"},
 	})
 
 	h.AssertEvents(t, events.Event{
 		Message: "Hello Luke!",
 		Args: events.Args{
-			{"name", "Luke"},
-			{"from", "Han"},
+			{Name: "name", Value: "Luke"},
+			{Name: "from", Value: "Han"},
 		},
 	})
 }
