@@ -136,8 +136,8 @@ import (
     "errors"
     "os"
 
-    "github.com/segmetio/events"
-    "github.com/segmetio/events/ecslogs"
+    "github.com/segmentio/events"
+    "github.com/segmentio/events/ecslogs"
 )
 
 func main() {
@@ -164,9 +164,9 @@ Here's a code example that is commonly used to configure the events package:
 package main
 
 import (
-    "github.com/segmetio/events"
-    _ "github.com/segmetio/events/ecslogs"
-    _ "github.com/segmetio/events/text"
+    "github.com/segmentio/events"
+    _ "github.com/segmentio/events/ecslogs"
+    _ "github.com/segmentio/events/text"
 )
 
 func main() {
