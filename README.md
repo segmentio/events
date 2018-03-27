@@ -19,7 +19,7 @@ be later analyzed.
 
 The package was inspired by [this post](https://dave.cheney.net/2015/11/05/lets-talk-about-logging)
 from Dave Cheney. It borrowed a lot of the ideas but tried to find the sweet
-spot between Dave's idialistic view of what logging is supposed to be, and
+spot between Dave's idealistic view of what logging is supposed to be, and
 production constraints that we have here at Segment.
 
 ## Events
