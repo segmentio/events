@@ -41,6 +41,7 @@ func TestHandler(t *testing.T) {
 
 	req := httptest.NewRequest("GET", "/hello?answer=42", nil)
 	req.Header.Set("User-Agent", "httpevents")
+	req.Header.Set("Authorization", "this will be deleted")
 	req.URL.Fragment = "universe" // for some reason NewRequest doesn't parses this
 	req.Host = "www.github.com"
 	req.RemoteAddr = "127.0.0.1:56789"

@@ -75,6 +75,9 @@ func (r *request) reset(req *http.Request, laddr string) {
 		raddr = "???"
 	}
 
+	// We delete the authorization header such that private secrets are not logged
+	req.Header.Del("Authorization")
+
 	r.laddr = laddr
 	r.raddr = raddr
 	r.method = req.Method
