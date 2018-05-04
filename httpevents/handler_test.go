@@ -41,6 +41,7 @@ func TestHandler(t *testing.T) {
 
 	req := httptest.NewRequest("GET", "/hello?answer=42", nil)
 	req.Header.Set("User-Agent", "httpevents")
+	req.Header.Set("Authorization", "this will be deleted")
 	req.URL.Fragment = "universe" // for some reason NewRequest doesn't parses this
 	req.Host = "www.github.com"
 	req.RemoteAddr = "127.0.0.1:56789"
@@ -53,6 +54,9 @@ func TestHandler(t *testing.T) {
 	log := events.NewLogger(eventsHandler)
 
 	h := NewHandlerWith(log, http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		if req.Header.Get("Authorization") != "this will be deleted" {
+			t.Error("Authorization header should not change in request handler")
+		}
 		res.WriteHeader(http.StatusAccepted)
 	}))
 	h.ServeHTTP(res, req)

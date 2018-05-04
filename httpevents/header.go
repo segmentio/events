@@ -26,6 +26,11 @@ func (h *headerList) set(httpHeader http.Header) {
 	list := (*h)[:0]
 
 	for name, values := range httpHeader {
+		// Do not accept and log headers that contain credentials
+		if name == "Authorization" {
+			continue
+		}
+
 		for _, value := range values {
 			list = append(list, header{
 				name:  name,
