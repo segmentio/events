@@ -54,6 +54,9 @@ func TestHandler(t *testing.T) {
 	log := events.NewLogger(eventsHandler)
 
 	h := NewHandlerWith(log, http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		if req.Header.Get("Authorization") != "this will be deleted" {
+			t.Error("Authorization header should not change in request handler")
+		}
 		res.WriteHeader(http.StatusAccepted)
 	}))
 	h.ServeHTTP(res, req)
