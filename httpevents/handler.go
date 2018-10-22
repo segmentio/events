@@ -19,7 +19,7 @@ func NewHandler(handler http.Handler) http.Handler {
 // requests with logger.
 //
 // Panics from handler are intercepted and trigger a 500 response if no response
-// header was sent yet. The panic is not slienced tho and is propagated to the
+// header was sent yet. The panic is not silenced tho and is propagated to the
 // parent handler.
 func NewHandlerWith(logger *events.Logger, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
