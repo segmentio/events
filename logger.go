@@ -2,6 +2,7 @@ package events
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"strconv"
 	"strings"
@@ -16,6 +17,12 @@ var DefaultLogger = NewLogger(nil)
 // Log emits a log event to the default logger.
 func Log(format string, args ...interface{}) {
 	DefaultLogger.log(1, false, format, args...)
+}
+
+// Fatal emits a log event to the default logger and calls `os.Exit(1)`.
+func Fatal(format string, args ...interface{}) {
+	DefaultLogger.log(1, false, format, args...)
+	os.Exit(1)
 }
 
 // Debug emits a debug event to the default logger.
@@ -143,6 +150,13 @@ func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) 
 
 	logPool.Put(s)
 	return
+}
+
+// Fatal formats an event, sends it to the logger's handler and calls
+// `os.Exit(1)`.
+func (l *Logger) Fatal(format string, args ...interface{}) {
+	l.log(1, false, format, args...)
+	os.Exit(1)
 }
 
 // Debug is like Log but only produces events if the logger has debugging
