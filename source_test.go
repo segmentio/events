@@ -2,6 +2,7 @@ package events
 
 import (
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -11,11 +12,11 @@ func TestSourceForPC(t *testing.T) {
 
 	file, line := SourceForPC(pc[0])
 
-	if file != "github.com/segmentio/events/source_test.go" {
+	if !strings.HasSuffix(file, "github.com/segmentio/events/source_test.go") {
 		t.Error("bad file:", file)
 	}
 
-	if line != 10 {
+	if line != 11 {
 		t.Error("bad line:", line)
 	}
 }

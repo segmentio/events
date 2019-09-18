@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/segmentio/events"
+	"github.com/segmentio/events/v2"
 )
 
 // DefaultTimeFormat is the default time format set on Handler.

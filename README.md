@@ -66,7 +66,7 @@ For example, this piece of code generates an event that has an argument named
 package main
 
 import (
-    "github.com/segmentio/events"
+    "github.com/segmentio/events/v2"
 )
 
 func main() {
@@ -136,8 +136,8 @@ import (
     "errors"
     "os"
 
-    "github.com/segmentio/events"
-    "github.com/segmentio/events/ecslogs"
+    "github.com/segmentio/events/v2"
+    "github.com/segmentio/events/v2/ecslogs"
 )
 
 func main() {
@@ -164,9 +164,9 @@ Here's a code example that is commonly used to configure the events package:
 package main
 
 import (
-    "github.com/segmentio/events"
-    _ "github.com/segmentio/events/ecslogs"
-    _ "github.com/segmentio/events/text"
+    "github.com/segmentio/events/v2"
+    _ "github.com/segmentio/events/v2/ecslogs"
+    _ "github.com/segmentio/events/v2/text"
 )
 
 func main() {

@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/segmentio/events"
-	"github.com/segmentio/events/eventstest"
+	"github.com/segmentio/events/v2"
+	"github.com/segmentio/events/v2/eventstest"
 )
 
 func TestTransport(t *testing.T) {

@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/segmentio/events"
+	"github.com/segmentio/events/v2"
 )
 
 // Handler is an event handler which formats events in a ecslogs-compatible

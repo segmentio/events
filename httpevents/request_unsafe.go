@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/segmentio/events"
+	"github.com/segmentio/events/v2"
 )
 
 func bytesToStringNonEmpty(b []byte) string {

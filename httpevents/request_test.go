@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/segmentio/events"
+	"github.com/segmentio/events/v2"
 )
 
 func BenchmarkRequestLog(b *testing.B) {

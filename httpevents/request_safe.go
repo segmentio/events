@@ -2,7 +2,7 @@
 
 package httpevents
 
-import "github.com/segmentio/events"
+import "github.com/segmentio/events/v2"
 
 func bytesToStringNonEmpty(b []byte) string {
 	return string(b)

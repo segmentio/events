@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/segmentio/events"
+	"github.com/segmentio/events/v2"
 )
 
 func init() {

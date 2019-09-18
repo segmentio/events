@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/segmentio/events"
-	"github.com/segmentio/events/eventstest"
+	"github.com/segmentio/events/v2"
+	"github.com/segmentio/events/v2/eventstest"
 )
 
 func TestNewLogger(t *testing.T) {

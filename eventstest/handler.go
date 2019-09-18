@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/segmentio/events"
+	"github.com/segmentio/events/v2"
 )
 
 var _ events.Handler = (*Handler)(nil)

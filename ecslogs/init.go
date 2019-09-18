@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/segmentio/events"
+	"github.com/segmentio/events/v2"
 )
 
 func init() {

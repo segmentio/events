@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/segmentio/events"
+	"github.com/segmentio/events/v2"
 )
 
 func TestHandler(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/segmentio/events"
+	"github.com/segmentio/events/v2"
 )
 
 type connLogger struct {
