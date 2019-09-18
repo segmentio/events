@@ -1,6 +1,8 @@
 package ecslogs
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"reflect"
@@ -9,12 +11,9 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/pkg/errors"
 	"github.com/segmentio/events"
-	"github.com/segmentio/objconv"
-	"github.com/segmentio/objconv/json"
 )
 
 // Handler is an event handler which formats events in a ecslogs-compatible
@@ -41,7 +40,6 @@ func NewHandler(output io.Writer) *Handler {
 func (h *Handler) HandleEvent(e *events.Event) {
 	f := fmtPool.Get().(*formatter)
 	f.buffer.Reset()
-	f.emitter.Reset(&f.buffer)
 
 	f.level = "INFO"
 	f.time = e.Time
@@ -62,8 +60,7 @@ func (h *Handler) HandleEvent(e *events.Event) {
 		}
 	}
 
-	(objconv.Encoder{Emitter: &f.emitter}).Encode(f.value)
-	f.buffer.WriteByte('\n')
+	f.encoder.Encode(f.value)
 
 	h.mutex.Lock()
 	h.Output.Write(f.buffer.b)
@@ -75,25 +72,25 @@ func (h *Handler) HandleEvent(e *events.Event) {
 }
 
 type event struct {
-	Level   *string    `objconv:"level"`
-	Time    *time.Time `objconv:"time"`
-	Info    *eventInfo `objconv:"info"`
-	Data    *eventData `objconv:"data"`
-	Message *string    `objconv:"message"`
+	Level   *string    `json:"level"`
+	Time    *time.Time `json:"time"`
+	Info    *eventInfo `json:"info"`
+	Data    *eventData `json:"data"`
+	Message *string    `json:"message"`
 }
 
 type eventInfo struct {
-	Program string       `objconv:"program,omitempty"`
-	Source  string       `objconv:"source,omitempty"`
-	Pid     int          `objconv:"pid,omitempty"`
-	Errors  []eventError `objconv:"errors,omitempty"`
+	Program string       `json:"program,omitempty"`
+	Source  string       `json:"source,omitempty"`
+	Pid     int          `json:"pid,omitempty"`
+	Errors  []eventError `json:"errors,omitempty"`
 }
 
 type eventError struct {
-	Type  string     `objconv:"type,omitempty"`
-	Error string     `objconv:"error,omitempty"`
-	Errno int        `objconv:"errno,omitempty"`
-	Stack stackTrace `objconv:"stack,omitempty"`
+	Type  string     `json:"type,omitempty"`
+	Error string     `json:"error,omitempty"`
+	Errno int        `json:"errno,omitempty"`
+	Stack stackTrace `json:"stack,omitempty"`
 }
 
 func makeEventError(err error) eventError {
@@ -123,24 +120,32 @@ type eventData struct {
 	args events.Args
 }
 
-func (data *eventData) EncodeValue(e objconv.Encoder) error {
-	n := len(data.args)
+func (data *eventData) MarshalJSON() ([]byte, error) {
+	if len(data.args) == 0 {
+		return []byte(`{}`), nil
+	}
+
+	b := &bytes.Buffer{}
+	b.Grow(64)
+	b.WriteByte('{')
+
+	n := 0
 	i := data.next(0)
-	return e.EncodeMap(-1, func(k objconv.Encoder, v objconv.Encoder) (err error) {
-		if i != n {
-			if err = k.Encode(&data.args[i].Name); err != nil {
-				return
-			}
-			if err = v.Encode(&data.args[i].Value); err != nil {
-				return
-			}
-			i = data.next(i + 1)
+	e := json.NewEncoder(b)
+
+	for i < len(data.args) {
+		if n != 0 {
+			b.WriteByte(',')
 		}
-		if i == n {
-			err = objconv.End
-		}
-		return
-	})
+		fmt.Fprintf(b, `%q:`, jsonString{&data.args[i].Name})
+		e.Encode(&data.args[i].Value)
+		b.Truncate(b.Len() - 1) // remove trailing '\n'
+		i = data.next(i + 1)
+		n++
+	}
+
+	b.WriteByte('}')
+	return b.Bytes(), nil
 }
 
 func (data *eventData) next(i int) int {
@@ -159,21 +164,27 @@ type stackTracer interface {
 
 type stackTrace []errors.Frame
 
-func (st stackTrace) EncodeValue(e objconv.Encoder) error {
-	f := fmtPool.Get().(*formatter)
-	i := 0
+func (st stackTrace) MarshalJSON() ([]byte, error) {
+	if len(st) == 0 {
+		return []byte(`[]`), nil
+	}
 
-	err := e.EncodeArray(len(st), func(e objconv.Encoder) error {
-		f.buffer.Reset()
-		pc := uintptr(st[i])
+	b := &bytes.Buffer{}
+	b.Grow(256)
+	b.WriteByte('[')
+
+	for i, frame := range st {
+		if i != 0 {
+			b.WriteByte(',')
+		}
+		pc := uintptr(frame)
 		file, line := events.SourceForPC(pc)
 		i++
-		fmt.Fprintf(&f.buffer, "%s:%d:%s", file, line, funcName(file, pc))
-		return e.Encode(stringNoCopy(f.buffer.b))
-	})
+		fmt.Fprintf(b, `"%s:%d:%s"`, file, line, funcName(file, pc))
+	}
 
-	fmtPool.Put(f)
-	return err
+	b.WriteByte(']')
+	return b.Bytes(), nil
 }
 
 func funcName(file string, pc uintptr) string {
@@ -203,15 +214,14 @@ type formatter struct {
 
 	buffer  buffer
 	source  buffer
-	emitter json.Emitter
+	encoder json.Encoder
 }
 
 var fmtPool = sync.Pool{
 	New: func() interface{} {
 		f := &formatter{
-			buffer:  buffer{make([]byte, 0, 4096)},
-			source:  buffer{make([]byte, 0, 256)},
-			emitter: *json.NewEmitter(nil),
+			buffer: buffer{make([]byte, 0, 4096)},
+			source: buffer{make([]byte, 0, 256)},
 		}
 		f.value = &event{
 			Level:   &f.level,
@@ -220,6 +230,8 @@ var fmtPool = sync.Pool{
 			Data:    &f.data,
 			Message: &f.message,
 		}
+		f.encoder = *json.NewEncoder(&f.buffer)
+		f.encoder.SetEscapeHTML(false)
 		return f
 	},
 }
@@ -245,12 +257,6 @@ func (buf *buffer) WriteByte(b byte) (err error) {
 	return
 }
 
-func stringNoCopy(b []byte) string {
-	if len(b) == 0 {
-		return ""
-	}
-	return *(*string)(unsafe.Pointer(&reflect.StringHeader{
-		Data: uintptr(unsafe.Pointer(&b[0])),
-		Len:  len(b),
-	}))
-}
+type jsonString struct{ s *string }
+
+func (j jsonString) String() string { return *j.s }

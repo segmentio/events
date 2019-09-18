@@ -1,11 +1,11 @@
 package httpevents
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sort"
-
-	"github.com/segmentio/objconv"
 )
 
 // An ordered list of HTTP headers.
@@ -53,20 +53,34 @@ func (h *headerList) Clone() interface{} {
 	return &c
 }
 
-func (h *headerList) EncodeValue(e objconv.Encoder) error {
-	i := 0
-	return e.EncodeMap(len(*h), func(k objconv.Encoder, v objconv.Encoder) error {
-		if err := k.Encode(&(*h)[i].name); err != nil {
-			return err
+func (h *headerList) MarshalJSON() ([]byte, error) {
+	if len(*h) == 0 {
+		return []byte(`{}`), nil
+	}
+
+	b := &bytes.Buffer{}
+	b.Grow(256)
+	b.WriteByte('{')
+
+	for i := range *h {
+		if i != 0 {
+			b.WriteByte(',')
 		}
-		if err := v.Encode(&(*h)[i].value); err != nil {
-			return err
-		}
-		i++
-		return nil
-	})
+		fmt.Fprintf(b, `%q:%q`, jsonString{&(*h)[i].name}, jsonString{&(*h)[i].value})
+	}
+
+	b.WriteByte('}')
+	return b.Bytes(), nil
 }
 
 func (h *headerList) Len() int               { return len(*h) }
 func (h *headerList) Less(i int, j int) bool { return (*h)[i].name < (*h)[j].name }
 func (h *headerList) Swap(i int, j int)      { (*h)[i], (*h)[j] = (*h)[j], (*h)[i] }
+
+type jsonString struct{ s *string }
+
+func (j jsonString) String() string { return *j.s }
+
+var (
+	_ json.Marshaler = (*headerList)(nil)
+)
