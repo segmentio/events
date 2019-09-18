@@ -1,4 +1,4 @@
-module github.com/segmentio/events
+module github.com/segmentio/events/v2
 
 require (
 	github.com/pkg/errors v0.8.0
