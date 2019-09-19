@@ -25,7 +25,7 @@ production constraints that we have here at Segment.
 ## Events
 
 At the core of the package is the `Event` type. Instances of this type carry
-the context in which the event was generated and the inforation related to
+the context in which the event was generated and the information related to
 the event.
 
 Events are passed from the sources that trigger them to handlers, which are
