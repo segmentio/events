@@ -11,6 +11,7 @@ import (
 
 // NewHandler wraps the HTTP handler and returns a new handler which logs all
 // requests with the default logger.
+// 4xx and 5xx responses will be logged, while all other responses are debug logged.
 func NewHandler(handler http.Handler) http.Handler {
 	return NewHandlerWith(events.DefaultLogger, handler)
 }
