@@ -9,8 +9,9 @@ import (
 	"github.com/segmentio/events/v2"
 )
 
-// NewHandler wraps the HTTP handler and returns a new handler which logs all
-// requests with the default logger.
+// NewHandler wraps the HTTP handler and returns a new handler which logs all 4xx
+// and 5xx requests with the default logger. All other requests will only be logged
+// in debug mode.
 func NewHandler(handler http.Handler) http.Handler {
 	return NewHandlerWith(events.DefaultLogger, handler)
 }
