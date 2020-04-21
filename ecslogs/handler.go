@@ -2,7 +2,6 @@ package ecslogs
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"reflect"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/segmentio/encoding/json"
 	"github.com/segmentio/events/v2"
 )
 
