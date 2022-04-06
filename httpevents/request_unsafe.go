@@ -1,19 +1,16 @@
+//go:build go1.5
 // +build go1.5
 
 package httpevents
 
 import (
-	"reflect"
 	"unsafe"
 
 	"github.com/segmentio/events/v2"
 )
 
 func bytesToStringNonEmpty(b []byte) string {
-	return *(*string)(unsafe.Pointer(&reflect.StringHeader{
-		Data: uintptr(unsafe.Pointer(&b[0])),
-		Len:  len(b),
-	}))
+	return *(*string)(unsafe.Pointer(&b))
 }
 
 func convS2E(s *string) interface{} {

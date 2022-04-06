@@ -1,7 +1,6 @@
 package log
 
 import (
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -44,10 +43,7 @@ func (w *Writer) Write(b []byte) (int, error) {
 
 	var h = w.handler
 	var e = eventPool.Get().(*events.Event)
-	var s = *(*string)(unsafe.Pointer(&reflect.StringHeader{
-		Data: uintptr(unsafe.Pointer(&b[0])),
-		Len:  len(b),
-	}))
+	var s = *(*string)(unsafe.Pointer(&b))
 	var t time.Time
 	var src string
 
