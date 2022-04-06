@@ -12,7 +12,7 @@ func TestSourceForPC(t *testing.T) {
 
 	file, line := SourceForPC(pc[0])
 
-	if !strings.HasSuffix(file, "github.com/segmentio/events/source_test.go") {
+	if !strings.HasSuffix(file, "events/source_test.go") {
 		t.Error("bad file:", file)
 	}
 
