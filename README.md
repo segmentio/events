@@ -177,3 +177,7 @@ func main() {
     events.Log("enjoy!")
 }
 ```
+
+### Errata
+
+This package only officially supports the latest two Go versions.
