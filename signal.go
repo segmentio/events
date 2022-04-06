@@ -25,7 +25,7 @@ func Signal(sigchan <-chan os.Signal) <-chan os.Signal {
 // The function returns a channel on which signals are forwarded, the program
 // should use this channel instead of sigchan to receive signals.
 func SignalWith(handler Handler, sigchan <-chan os.Signal) <-chan os.Signal {
-	output := make(chan os.Signal)
+	output := make(chan os.Signal, 10)
 
 	// We capture the stack frame here instead of in the goroutine because it
 	// gives a more meaningful value (the caller of Signal, which usually is
@@ -61,7 +61,7 @@ func SignalWith(handler Handler, sigchan <-chan os.Signal) <-chan os.Signal {
 // of the given signals is received by the program.
 func WithSignals(ctx context.Context, signals ...os.Signal) (context.Context, context.CancelFunc) {
 	done := make(chan struct{})
-	sigchan := make(chan os.Signal)
+	sigchan := make(chan os.Signal, 10)
 	sigrecv := Signal(sigchan)
 	signal.Notify(sigchan, signals...)
 

@@ -1,3 +1,4 @@
+//go:build go1.5
 // +build go1.5
 
 package events
@@ -18,13 +19,10 @@ func cloneValue(v interface{}) interface{} {
 }
 
 func bytesToString(b []byte) string {
-	// The conversion of a byte slice ot a string is ensured not to cause a
+	// The conversion of a byte slice to a string is ensured not to cause a
 	// dynamic memory allocation.
 	if len(b) == 0 {
 		return ""
 	}
-	return *(*string)(unsafe.Pointer(&reflect.StringHeader{
-		Data: uintptr(unsafe.Pointer(&b[0])),
-		Len:  len(b),
-	}))
+	return *(*string)(unsafe.Pointer(&b))
 }
