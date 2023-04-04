@@ -41,9 +41,9 @@ func (w *Writer) Write(b []byte) (int, error) {
 		return 0, nil
 	}
 
-	var h = w.handler
-	var e = eventPool.Get().(*events.Event)
-	var s = *(*string)(unsafe.Pointer(&b))
+	h := w.handler
+	e := eventPool.Get().(*events.Event)
+	s := *(*string)(unsafe.Pointer(&b))
 	var t time.Time
 	var src string
 

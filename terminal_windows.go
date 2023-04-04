@@ -14,9 +14,7 @@ import (
 
 var kernel32 = syscall.NewLazyDLL("kernel32.dll")
 
-var (
-	procGetConsoleMode = kernel32.NewProc("GetConsoleMode")
-)
+var procGetConsoleMode = kernel32.NewProc("GetConsoleMode")
 
 type (
 	short int16

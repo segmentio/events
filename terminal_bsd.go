@@ -9,5 +9,7 @@ package events
 
 import "syscall"
 
-const ioctlReadTermios = syscall.TIOCGETA
-const ioctlWriteTermios = syscall.TIOCSETA
+const (
+	ioctlReadTermios  = syscall.TIOCGETA
+	ioctlWriteTermios = syscall.TIOCSETA
+)
