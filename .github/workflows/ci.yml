@@ -27,5 +27,6 @@ jobs:
 
     - name: Run Tests
       run: |
+        go mod vendor
         go vet ./...
         go test -race -v ./...
