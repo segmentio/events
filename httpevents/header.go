@@ -81,6 +81,4 @@ type jsonString struct{ s *string }
 
 func (j jsonString) String() string { return *j.s }
 
-var (
-	_ json.Marshaler = (*headerList)(nil)
-)
+var _ json.Marshaler = (*headerList)(nil)

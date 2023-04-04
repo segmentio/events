@@ -94,10 +94,10 @@ type eventError struct {
 }
 
 func makeEventError(err error) eventError {
-	var cause = errors.Cause(err)
-	var etype = reflect.TypeOf(cause).String()
-	var error = err.Error()
-	var errno = 0
+	cause := errors.Cause(err)
+	etype := reflect.TypeOf(cause).String()
+	error := err.Error()
+	errno := 0
 	var stack stackTrace
 
 	if se, ok := cause.(syscall.Errno); ok {

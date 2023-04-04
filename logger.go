@@ -89,8 +89,8 @@ func (l *Logger) Log(format string, args ...interface{}) {
 }
 
 func (l *Logger) log(depth int, debug bool, format string, args ...interface{}) {
-	var h = l.Handler
-	var s = logPool.Get().(*logState)
+	h := l.Handler
+	s := logPool.Get().(*logState)
 	var a Args
 
 	if h == nil {
@@ -160,7 +160,7 @@ func (l *Logger) debug(depth int, format string, args ...interface{}) {
 // With returns a new Logger which is a copy of l augmented with args.
 func (l *Logger) With(args Args) *Logger {
 	var newArgs Args
-	var newLen = len(l.Args) + len(args)
+	newLen := len(l.Args) + len(args)
 
 	if newLen != 0 {
 		newArgs = make(Args, 0, newLen)
@@ -264,7 +264,5 @@ func appendFormat(dstFmt []byte, dstArgs Args, srcFmt string, srcArgs []interfac
 	return dstFmt, dstArgs
 }
 
-var (
-	// Prevents Go from doing a memory allocation when there is a missing argument.
-	missing interface{} = "MISSING"
-)
+// Prevents Go from doing a memory allocation when there is a missing argument.
+var missing interface{} = "MISSING"
