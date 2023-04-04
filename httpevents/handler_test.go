@@ -146,4 +146,6 @@ type mockAddr struct {
 func (a mockAddr) String() string  { return a.s }
 func (a mockAddr) Network() string { return a.n }
 
-var _ http.Hijacker = &responseWriter{}
+var (
+	_ http.Hijacker = &responseWriter{}
+)

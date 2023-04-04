@@ -44,6 +44,7 @@ func NewHandlerWith(logger *events.Logger, handler http.Handler) http.Handler {
 		// the parent handler which may need to be aware that a panic occurred.
 		defer func() {
 			err := recover()
+
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
