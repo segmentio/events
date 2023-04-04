@@ -48,7 +48,7 @@ func TestListener(t *testing.T) {
 	}
 
 	expect := []*events.Event{
-		{
+		&events.Event{
 			Message: fmt.Sprintf("%s->%s - opening server tcp connection", laddr, raddr),
 			Args: events.Args{
 				{Name: "local_address", Value: laddr},
@@ -59,7 +59,7 @@ func TestListener(t *testing.T) {
 			},
 		},
 
-		{
+		&events.Event{
 			Message: fmt.Sprintf("%s->%s - closing server tcp connection", laddr, raddr),
 			Args: events.Args{
 				{Name: "local_address", Value: laddr},
@@ -70,7 +70,7 @@ func TestListener(t *testing.T) {
 			},
 		},
 
-		{
+		&events.Event{
 			Message: fmt.Sprintf("%s - shutting down server tcp socket", saddr),
 			Args: events.Args{
 				{Name: "local_address", Value: saddr},
@@ -93,4 +93,5 @@ func TestListener(t *testing.T) {
 			t.Logf("%#v\n", e)
 		}
 	}
+
 }

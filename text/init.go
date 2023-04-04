@@ -12,6 +12,7 @@ import (
 )
 
 func init() {
+
 	DefaultPrefix = fmt.Sprintf("%s[%d]: ", filepath.Base(os.Args[0]), os.Getpid())
 
 	if events.IsTerminal(1) {

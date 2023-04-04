@@ -19,7 +19,6 @@ func SourceForPC(pc uintptr) (file string, line int) {
 // All rights reserved.
 //
 //	Redistribution and use in source and binary forms, with or without
-//
 // modification, are permitted provided that the following conditions are met:
 //
 // * Redistributions of source code must retain the above copyright notice, this
@@ -39,6 +38,7 @@ func SourceForPC(pc uintptr) (file string, line int) {
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 func trimGOPATH(name, file string) string {
 	// Here we want to get the source file path relative to the compile time
 	// GOPATH. As of Go 1.6.x there is no direct way to know the compiled

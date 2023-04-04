@@ -74,8 +74,8 @@ func TestUnsafe(t *testing.T) {
 
 			for i := 0; i != 2000; i++ {
 				_ = make([]byte, 1024*1024)
-				from := "Luke"
-				to := "Han"
+				var from = "Luke"
+				var to = "Han"
 				logger.Log("hello world: from=%{from}s, to=%{to}s", from, to)
 				time.Sleep(time.Millisecond)
 			}
