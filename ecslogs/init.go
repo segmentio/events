@@ -11,7 +11,6 @@ import (
 )
 
 func init() {
-
 	if !events.IsTerminal(1) {
 		events.DefaultHandler = &Handler{
 			Output:  os.Stdout,

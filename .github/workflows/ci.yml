@@ -9,6 +9,8 @@ jobs:
         go:
         - '1.17.x'
         - '1.18.x'
+        - '1.19.x'
+        - '1.20.x'
 
     runs-on: ubuntu-latest
 
@@ -25,5 +27,6 @@ jobs:
 
     - name: Run Tests
       run: |
+        go mod vendor
         go vet ./...
         go test -race -v ./...
