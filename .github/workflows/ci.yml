@@ -11,14 +11,15 @@ jobs:
         - '1.18.x'
         - '1.19.x'
         - '1.20.x'
+        - '1.21.x'
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Setup Go ${{ matrix.go }}
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v4
       with:
         go-version: ${{ matrix.go }}
 
@@ -27,6 +28,5 @@ jobs:
 
     - name: Run Tests
       run: |
-        go mod vendor
-        go vet ./...
-        go test -race -v ./...
+        make vendor
+        make test
