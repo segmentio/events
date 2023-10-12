@@ -92,7 +92,7 @@ func copyHeaders(headers http.Header) http.Header {
 
 	return headersCopy
 }
-func NewHandlerWithFormatting(formatter LoggerFunc, logger *events.Logger, handler http.Handler) http.Handler {
+func NewHandlerWithFormatting(formatter RequestTransformFunc, logger *events.Logger, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		var laddr string
 
@@ -105,7 +105,7 @@ func NewHandlerWithFormatting(formatter LoggerFunc, logger *events.Logger, handl
 		// gets modified by the handler.
 		w.ResponseWriter = res
 		w.logger = logger
-		w.SanitizeHeaders = formatter
+		w.MutateRequest = formatter
 		w.request.reset(req, laddr)
 
 		// If the handler panics we want to make sure we report the issue in the
@@ -140,15 +140,22 @@ func NewHandlerWithFormatting(formatter LoggerFunc, logger *events.Logger, handl
 
 }
 
+type RequestTransformFunc func(request2 *request) *request
 type responseWriter struct {
 	http.ResponseWriter
 	logger *events.Logger
 	request
 	wroteHeader     bool
 	SanitizeHeaders LoggerFunc
+	MutateRequest   RequestTransformFunc
 }
 
 func (w *responseWriter) WriteHeader(status int) {
+	fmt.Println("Headers before logging")
+	for k, v := range w.request.reqHeaders {
+		fmt.Println(k)
+		fmt.Println(v)
+	}
 	w.log(1, status)
 
 	if !w.wroteHeader {
@@ -191,10 +198,10 @@ func (w *responseWriter) log(depth int, status int) {
 			fmt.Println("Changed Headers")
 			println(headers)
 			println(headers.Get("User-Agent"))
-			w.request.log(logger, headers, depth+1)
+			w.request.log(logger, headers, depth+1, w.MutateRequest)
 		} else {
 			fmt.Println("MISSING FUNC")
-			w.request.log(logger, w.ResponseWriter.Header(), depth+1)
+			w.request.log(logger, w.ResponseWriter.Header(), depth+1, w.MutateRequest)
 		}
 	}
 }

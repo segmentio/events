@@ -86,7 +86,11 @@ func (r *request) reset(req *http.Request, laddr string) {
 	r.reqHeaders.set(req.Header)
 }
 
-func (r *request) log(logger *events.Logger, resHeader http.Header, depth int) {
+func (r *request) log(logger *events.Logger, resHeader http.Header, depth int, transformFunc RequestTransformFunc) {
+	if transformFunc != nil {
+		r = transformFunc(r)
+	}
+
 	r.resHeaders.set(resHeader)
 	r.extraArgs = append(r.extraArgs[:0],
 		events.Arg{

@@ -22,7 +22,7 @@ func BenchmarkRequestLog(b *testing.B) {
 	l := &events.Logger{}
 
 	for i := 0; i != b.N; i++ {
-		r.log(l, nil, 0)
+		r.log(l, nil, 0, nil)
 	}
 }
 

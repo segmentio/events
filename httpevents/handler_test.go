@@ -84,9 +84,17 @@ func filterHeaders(headers http.Header) http.Header {
 	fmt.Println("before")
 	fmt.Println(headers)
 	headers.Del("User-Agent")
+	headers.Del("local_address")
 	fmt.Println("after")
 	fmt.Println(headers)
 	return headers
+}
+
+func mutateRequest(request2 *request) *request {
+	fmt.Println("before")
+	fmt.Println(request2)
+	request2.path = "/mutated"
+	return request2
 }
 func TestNewHandlerWithFormatting(t *testing.T) {
 	eventsHandler := &eventstest.Handler{}
@@ -105,19 +113,28 @@ func TestNewHandlerWithFormatting(t *testing.T) {
 	res := httptest.NewRecorder()
 	log := events.NewLogger(eventsHandler)
 
-	h := NewHandlerWithFormatting(filterHeaders, log, http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+	/*
+		successHandler  = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+		})
+		failureHandler404 = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(404)
+		})
+	*/
+
+	h := NewHandlerWithFormatting(mutateRequest, log, http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusAccepted)
 	}))
 	h.ServeHTTP(res, req)
 
 	eventsHandler.AssertEvents(t, events.Event{
-		Message: `127.0.0.1:80->127.0.0.1:56789 - www.github.com - GET /hello?answer=42#universe - 202 Accepted - "httpevents"`,
+		Message: `127.0.0.1:80->127.0.0.1:56789 - www.github.com - GET /mutated?answer=42#universe - 202 Accepted - "httpevents"`,
 		Args: events.Args{
 			{Name: "local_address", Value: "127.0.0.1:80"},
 			{Name: "remote_address", Value: "127.0.0.1:56789"},
 			{Name: "host", Value: "www.github.com"},
 			{Name: "method", Value: "GET"},
-			//{Name: "path", Value: "/hello"},
+			{Name: "path", Value: "/mutated"},
 			{Name: "query", Value: "answer=42"},
 			{Name: "fragment", Value: "universe"},
 			{Name: "status", Value: 202},
