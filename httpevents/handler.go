@@ -2,6 +2,7 @@ package httpevents
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 	"net/http"
 	"sync"
@@ -68,11 +69,83 @@ func NewHandlerWith(logger *events.Logger, handler http.Handler) http.Handler {
 	})
 }
 
+type LoggerFunc func(headers http.Header) http.Header
+
+func copyHeaders(headers http.Header) http.Header {
+	fmt.Println("Copying headers")
+	fmt.Println("Existing Header")
+	for k, v := range headers {
+		fmt.Println(k)
+		fmt.Println(v)
+	}
+	headersCopy := make(http.Header)
+
+	for k, v := range headers {
+		headersCopy[k] = v
+	}
+
+	fmt.Println("New Headers")
+	for k, v := range headersCopy {
+		fmt.Println(k)
+		fmt.Println(v)
+	}
+
+	return headersCopy
+}
+func NewHandlerWithFormatting(formatter LoggerFunc, logger *events.Logger, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		var laddr string
+
+		if value, ok := req.Context().Value(http.LocalAddrContextKey).(net.Addr); ok {
+			laddr = value.String()
+		}
+
+		w := responseWriterPool.Get().(*responseWriter)
+		// We capture all the values we need from req in case the object
+		// gets modified by the handler.
+		w.ResponseWriter = res
+		w.logger = logger
+		w.SanitizeHeaders = formatter
+		w.request.reset(req, laddr)
+
+		// If the handler panics we want to make sure we report the issue in the
+		// access log, while also ensuring that a response is going to be sent
+		// down to the client.
+		// We don't silence the panic here tho and instead we forward it back to
+		// the parent handler which may need to be aware that a panic occurred.
+		defer func() {
+			err := recover()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+
+			w.ResponseWriter = nil
+			w.logger = nil
+			w.wroteHeader = false
+			w.request.release()
+			responseWriterPool.Put(w)
+
+			if err != nil {
+				panic(err)
+			}
+		}()
+
+		// The request is forwarded to the handler, if it never calls the
+		// writer's WriteHeader method we force the call with "200 OK" status
+		// to match the default behavior of the net/http package (and also make
+		// sure an access log will be written).
+		handler.ServeHTTP(w, req)
+		w.WriteHeader(http.StatusOK)
+	})
+
+}
+
 type responseWriter struct {
 	http.ResponseWriter
 	logger *events.Logger
 	request
-	wroteHeader bool
+	wroteHeader     bool
+	SanitizeHeaders LoggerFunc
 }
 
 func (w *responseWriter) WriteHeader(status int) {
@@ -103,7 +176,26 @@ func (w *responseWriter) log(depth int, status int) {
 		w.logger = nil
 		w.request.status = status
 		w.request.statusText = http.StatusText(status)
-		w.request.log(logger, w.ResponseWriter.Header(), depth+1)
+
+		if w.SanitizeHeaders != nil {
+			fmt.Println("Sanitizing headers")
+			for k, v := range w.ResponseWriter.Header() {
+				fmt.Println(k)
+				fmt.Println(v)
+			}
+			headers := w.SanitizeHeaders(copyHeaders(w.ResponseWriter.Header()))
+			fmt.Println("Headers")
+			println(w.ResponseWriter.Header())
+
+			println(w.ResponseWriter.Header().Get("User-Agent"))
+			fmt.Println("Changed Headers")
+			println(headers)
+			println(headers.Get("User-Agent"))
+			w.request.log(logger, headers, depth+1)
+		} else {
+			fmt.Println("MISSING FUNC")
+			w.request.log(logger, w.ResponseWriter.Header(), depth+1)
+		}
 	}
 }
 
