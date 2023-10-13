@@ -130,18 +130,22 @@ func (r *request) log(logger *events.Logger, resHeader http.Header, depth int) {
 		}
 	}
 
-	// Don't output a '?' character when the query string is empty, this is
-	// a more natural way of reading URLs.
-	if len(r.query) != 0 {
-		fmt = append(fmt, "?%{query}s"...)
-		arg = append(arg, convS2E(&r.query))
+	if r.includeLog(LoggerMaskQueryParams) {
+		// Don't output a '?' character when the query string is empty, this is
+		// a more natural way of reading URLs.
+		if len(r.query) != 0 {
+			fmt = append(fmt, "?%{query}s"...)
+			arg = append(arg, convS2E(&r.query))
+		}
 	}
 
-	// Same than with the query string, don't output a '#' character when
-	// there is no fragment.
-	if len(r.fragment) != 0 {
-		fmt = append(fmt, "#%{fragment}s"...)
-		arg = append(arg, convS2E(&r.fragment))
+	if r.includeLog(LoggerMaskFragment) {
+		// Same than with the query string, don't output a '#' character when
+		// there is no fragment.
+		if len(r.fragment) != 0 {
+			fmt = append(fmt, "#%{fragment}s"...)
+			arg = append(arg, convS2E(&r.fragment))
+		}
 	}
 	fmt = append(fmt, " - %{status}d %s - %q"...)
 	arg = append(arg, convI2E(&r.status), convS2E(&r.statusText), convS2E(&r.agent))
