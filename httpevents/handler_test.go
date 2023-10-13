@@ -80,7 +80,6 @@ func TestHandler(t *testing.T) {
 }
 
 func TestNewHandlerWithFormatting(t *testing.T) {
-	t.Skip()
 	eventsHandler := &eventstest.Handler{}
 
 	req := httptest.NewRequest("GET", "/hello?answer=42", nil)
