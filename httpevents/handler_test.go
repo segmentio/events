@@ -79,6 +79,58 @@ func TestHandler(t *testing.T) {
 	})
 }
 
+func TestNewHandlerWithFormatting(t *testing.T) {
+	eventsHandler := &eventstest.Handler{}
+
+	req := httptest.NewRequest("GET", "/hello?answer=42", nil)
+	req.Header.Set("User-Agent", "httpevents")
+	req.Header.Set("Authorization", "this will be deleted")
+	req.Header.Set("PII", "this header contains PII")
+	req.URL.Fragment = "universe" // for some reason NewRequest doesn't parses this
+	req.Host = "www.github.com"
+	req.RemoteAddr = "127.0.0.1:56789"
+	req = req.WithContext(context.WithValue(req.Context(), http.LocalAddrContextKey, mockAddr{
+		s: "127.0.0.1:80",
+		n: "tcp",
+	}))
+
+	res := httptest.NewRecorder()
+	log := events.NewLogger(eventsHandler)
+
+	pathSanitizer := func(path string) string {
+		return "<REDACTED>"
+	}
+	reqHeaderSanitizer := func(h http.Header) http.Header {
+		h.Del("PII")
+		return h
+	}
+	mask := NewLogSanitizer().
+		WithPathSanitizer(pathSanitizer).
+		WithReqHeaderSanitizer(reqHeaderSanitizer)
+
+	h := NewHandlerWithSanitizer(mask, log, http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		res.WriteHeader(http.StatusAccepted)
+	}))
+	h.ServeHTTP(res, req)
+
+	eventsHandler.AssertEvents(t, events.Event{
+		Message: `127.0.0.1:80->127.0.0.1:56789 - www.github.com - GET <REDACTED>?answer=42#universe - 202 Accepted - "httpevents"`,
+		Args: events.Args{
+			{Name: "local_address", Value: "127.0.0.1:80"},
+			{Name: "remote_address", Value: "127.0.0.1:56789"},
+			{Name: "host", Value: "www.github.com"},
+			{Name: "method", Value: "GET"},
+			{Name: "path", Value: "<REDACTED>"},
+			{Name: "query", Value: "answer=42"},
+			{Name: "fragment", Value: "universe"},
+			{Name: "status", Value: 202},
+			{Name: "request", Value: &headerList{{name: "User-Agent", value: "httpevents"}}},
+			{Name: "response", Value: &headerList{}},
+		},
+		Debug: true,
+	})
+}
+
 func TestHandlerPanic(t *testing.T) {
 	eventsHandler := &eventstest.Handler{}
 
