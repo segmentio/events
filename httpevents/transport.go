@@ -25,7 +25,7 @@ type transport struct {
 
 func (t *transport) RoundTrip(req *http.Request) (res *http.Response, err error) {
 	if res, err = t.RoundTripper.RoundTrip(req); res != nil {
-		r := acquireRequest(req, "*")
+		r := acquireRequest(req, "*", LoggerMaskAll)
 		r.status = res.StatusCode
 		r.statusText = http.StatusText(res.StatusCode)
 		r.log(t.logger, res.Header, 1)

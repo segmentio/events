@@ -2,7 +2,6 @@ package httpevents
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -80,14 +79,6 @@ func TestHandler(t *testing.T) {
 	})
 }
 
-func filterHeaders(headers http.Header) http.Header {
-	fmt.Println("before")
-	fmt.Println(headers)
-	headers.Del("User-Agent")
-	fmt.Println("after")
-	fmt.Println(headers)
-	return headers
-}
 func TestNewHandlerWithFormatting(t *testing.T) {
 	eventsHandler := &eventstest.Handler{}
 
@@ -105,13 +96,17 @@ func TestNewHandlerWithFormatting(t *testing.T) {
 	res := httptest.NewRecorder()
 	log := events.NewLogger(eventsHandler)
 
-	h := NewHandlerWithFormatting(filterHeaders, log, http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+	mask := NewLoggerMaskBuilder().
+		Exclude(LoggerMaskPath).
+		Build()
+
+	h := NewHandlerWithMask(mask, log, http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusAccepted)
 	}))
 	h.ServeHTTP(res, req)
 
 	eventsHandler.AssertEvents(t, events.Event{
-		Message: `127.0.0.1:80->127.0.0.1:56789 - www.github.com - GET /hello?answer=42#universe - 202 Accepted - "httpevents"`,
+		Message: `127.0.0.1:80->127.0.0.1:56789 - www.github.com - GET?answer=42#universe - 202 Accepted - "httpevents"`,
 		Args: events.Args{
 			{Name: "local_address", Value: "127.0.0.1:80"},
 			{Name: "remote_address", Value: "127.0.0.1:56789"},

@@ -29,11 +29,12 @@ type request struct {
 	fmtbuf     []byte
 	logbuf     []byte
 	argbuf     []interface{}
+	loggerMask LoggerMask
 }
 
-func acquireRequest(req *http.Request, laddr string) *request {
+func acquireRequest(req *http.Request, laddr string, mask LoggerMask) *request {
 	r := requestPool.Get().(*request)
-	r.reset(req, laddr)
+	r.reset(req, laddr, mask)
 	return r
 }
 
@@ -56,15 +57,18 @@ func (r *request) release() {
 	r.agent = zero
 	r.status = 0
 	r.statusText = zero
+
 	r.reqHeaders.clear()
 	r.resHeaders.clear()
+
+	r.loggerMask = LoggerMaskAll
 
 	for i := range r.argbuf {
 		r.argbuf[i] = nil
 	}
 }
 
-func (r *request) reset(req *http.Request, laddr string) {
+func (r *request) reset(req *http.Request, laddr string, mask LoggerMask) {
 	var raddr string
 
 	if len(laddr) == 0 {
@@ -84,29 +88,46 @@ func (r *request) reset(req *http.Request, laddr string) {
 	r.fragment = req.URL.Fragment
 	r.agent = req.UserAgent()
 	r.reqHeaders.set(req.Header)
+	r.extraArgs = nil
+
+	r.loggerMask = mask
+}
+
+func (r *request) includeLog(mask LoggerMask) bool {
+	return r.loggerMask&mask == mask
 }
 
 func (r *request) log(logger *events.Logger, resHeader http.Header, depth int) {
 	r.resHeaders.set(resHeader)
-	r.extraArgs = append(r.extraArgs[:0],
-		events.Arg{
-			Name:  "request",
-			Value: &r.reqHeaders,
-		},
-		events.Arg{
-			Name:  "response",
-			Value: &r.resHeaders,
-		},
-	)
+
+	if r.includeLog(LoggerMaskReqHeader) {
+		r.extraArgs = append(r.extraArgs,
+			events.Arg{
+				Name:  "request",
+				Value: &r.reqHeaders,
+			},
+		)
+	}
+
+	if r.includeLog(LoggerMaskResHeader) {
+		r.extraArgs = append(r.extraArgs,
+			events.Arg{
+				Name:  "response",
+				Value: &r.resHeaders,
+			},
+		)
+	}
 
 	arg := append(r.argbuf[:0], convS2E(&r.laddr), convS2E(&r.raddr), convS2E(&r.host), convS2E(&r.method))
 	fmt := append(r.logbuf[:0], "%{local_address}s->%{remote_address}s - %{host}s - %{method}s"...)
 
-	// Some methods don't have a path (like CONNECT), strip it to avoid printing
-	// a double-space.
-	if len(r.path) != 0 {
-		fmt = append(fmt, " %{path}s"...)
-		arg = append(arg, convS2E(&r.path))
+	if r.includeLog(LoggerMaskPath) {
+		// Some methods don't have a path (like CONNECT), strip it to avoid printing
+		// a double-space.
+		if len(r.path) != 0 {
+			fmt = append(fmt, " %{path}s"...)
+			arg = append(arg, convS2E(&r.path))
+		}
 	}
 
 	// Don't output a '?' character when the query string is empty, this is

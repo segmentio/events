@@ -18,6 +18,7 @@ func BenchmarkRequestLog(b *testing.B) {
 	r.query = "answer=42"
 	r.status = 400
 	r.statusText = "Bad Request"
+	r.loggerMask = LoggerMaskAll
 
 	l := &events.Logger{}
 
