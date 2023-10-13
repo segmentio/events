@@ -11,18 +11,25 @@ import (
 
 // NewHandler wraps the HTTP handler and returns a new handler which logs all 4xx
 // and 5xx requests with the default logger. All other requests will only be logged
-// in debug mode.
+// in debug mode.  See NewHandlerWithSanitizer for more details.
 func NewHandler(handler http.Handler) http.Handler {
 	return NewHandlerWith(events.DefaultLogger, handler)
 }
 
 // NewHandlerWith wraps the HTTP handler and returns a new handler which logs all
-// requests with logger.
+// requests with logger. See NewHandlerWithSanitizer for more details.
+func NewHandlerWith(logger *events.Logger, handler http.Handler) http.Handler {
+	return NewHandlerWithSanitizer(DefaultLogSanitizer, logger, handler)
+}
+
+// NewHandlerWithSanitizer wraps the HTTP handler and returns a new handler which logs all
+// requests with logger.  The LogSanitizer is used to sanitize the request and response that is logged.  eg, to
+// remove PII.
 //
 // Panics from handler are intercepted and trigger a 500 response if no response
 // header was sent yet. The panic is not silenced tho and is propagated to the
 // parent handler.
-func NewHandlerWith(logger *events.Logger, handler http.Handler) http.Handler {
+func NewHandlerWithSanitizer(sanitizer LogSanitizer, logger *events.Logger, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		var laddr string
 
@@ -35,7 +42,7 @@ func NewHandlerWith(logger *events.Logger, handler http.Handler) http.Handler {
 		// gets modified by the handler.
 		w.ResponseWriter = res
 		w.logger = logger
-		w.request.reset(req, laddr)
+		w.request.reset(sanitizer, req, laddr)
 
 		// If the handler panics we want to make sure we report the issue in the
 		// access log, while also ensuring that a response is going to be sent

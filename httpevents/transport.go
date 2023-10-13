@@ -6,7 +6,7 @@ import (
 	"github.com/segmentio/events/v2"
 )
 
-// NewTransportWith wraps roundTripper and returns a new transport which logs
+// NewTransport wraps roundTripper and returns a new transport which logs
 // all submitted requests with the default logger.
 func NewTransport(roundTripper http.RoundTripper) http.RoundTripper {
 	return NewTransportWith(events.DefaultLogger, roundTripper)
@@ -25,7 +25,7 @@ type transport struct {
 
 func (t *transport) RoundTrip(req *http.Request) (res *http.Response, err error) {
 	if res, err = t.RoundTripper.RoundTrip(req); res != nil {
-		r := acquireRequest(req, "*")
+		r := acquireRequest(DefaultLogSanitizer, req, "*")
 		r.status = res.StatusCode
 		r.statusText = http.StatusText(res.StatusCode)
 		r.log(t.logger, res.Header, 1)
