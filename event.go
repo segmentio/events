@@ -71,7 +71,7 @@ func clone(v interface{}) interface{} {
 	return cloneValue(v)
 }
 
-// Args reprsents a list of event arguments.
+// Args represents a list of event arguments.
 type Args []Arg
 
 // Arg represents a single event argument.

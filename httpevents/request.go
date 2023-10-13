@@ -88,17 +88,18 @@ func (r *request) reset(req *http.Request, laddr string, mask LoggerMask) {
 	r.fragment = req.URL.Fragment
 	r.agent = req.UserAgent()
 	r.reqHeaders.set(req.Header)
-	r.extraArgs = nil
 
 	r.loggerMask = mask
 }
 
 func (r *request) includeLog(mask LoggerMask) bool {
+	//return true
 	return r.loggerMask&mask == mask
 }
 
 func (r *request) log(logger *events.Logger, resHeader http.Header, depth int) {
 	r.resHeaders.set(resHeader)
+	r.extraArgs = make(events.Args, 0)
 
 	if r.includeLog(LoggerMaskReqHeader) {
 		r.extraArgs = append(r.extraArgs,
