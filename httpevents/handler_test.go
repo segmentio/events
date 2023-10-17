@@ -261,14 +261,18 @@ func BenchmarkHandler(b *testing.B) {
 	}
 }
 
+var (
+	pattern = `(/abc/[a-zA-Z0-9]+/)\S+(.*)`
+	re = regexp.MustCompile(pattern)
+)
 // This does take ~5x longer than the benchmark above, but it's doing a lot more
 func BenchmarkNewHandlerWithSanitizer(b *testing.B) {
 	l := &events.Logger{}
 
 	// compiling the regex once outside the function improves perf by ~3x
+
 	pattern := `(/abc/[a-zA-Z0-9]+/)\S+(.*)`
 	re := regexp.MustCompile(pattern)
-
 	pathSanitizer := func(path string) string {
 		return re.ReplaceAllString(path, "${1}<REDACTED>${2}")
 	}
