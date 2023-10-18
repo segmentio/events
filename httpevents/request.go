@@ -29,11 +29,12 @@ type request struct {
 	fmtbuf     []byte
 	logbuf     []byte
 	argbuf     []interface{}
+	sanitizer  LogSanitizer
 }
 
-func acquireRequest(req *http.Request, laddr string) *request {
+func acquireRequest(sanitizer LogSanitizer, req *http.Request, laddr string) *request {
 	r := requestPool.Get().(*request)
-	r.reset(req, laddr)
+	r.reset(sanitizer, req, laddr)
 	return r
 }
 
@@ -64,7 +65,7 @@ func (r *request) release() {
 	}
 }
 
-func (r *request) reset(req *http.Request, laddr string) {
+func (r *request) reset(sanitizer LogSanitizer, req *http.Request, laddr string) {
 	var raddr string
 
 	if len(laddr) == 0 {
@@ -75,6 +76,7 @@ func (r *request) reset(req *http.Request, laddr string) {
 		raddr = "???"
 	}
 
+	r.sanitizer = sanitizer
 	r.laddr = laddr
 	r.raddr = raddr
 	r.method = req.Method
@@ -83,11 +85,11 @@ func (r *request) reset(req *http.Request, laddr string) {
 	r.query = req.URL.RawQuery
 	r.fragment = req.URL.Fragment
 	r.agent = req.UserAgent()
-	r.reqHeaders.set(req.Header)
+	r.reqHeaders.set(sanitizer.ReqHeaders(req.Header))
 }
 
 func (r *request) log(logger *events.Logger, resHeader http.Header, depth int) {
-	r.resHeaders.set(resHeader)
+	r.resHeaders.set(r.sanitizer.ResHeaders(resHeader))
 	r.extraArgs = append(r.extraArgs[:0],
 		events.Arg{
 			Name:  "request",
@@ -104,16 +106,18 @@ func (r *request) log(logger *events.Logger, resHeader http.Header, depth int) {
 
 	// Some methods don't have a path (like CONNECT), strip it to avoid printing
 	// a double-space.
-	if len(r.path) != 0 {
+	path := r.sanitizer.Path(r.path)
+	if len(path) != 0 {
 		fmt = append(fmt, " %{path}s"...)
-		arg = append(arg, convS2E(&r.path))
+		arg = append(arg, convS2E(&path))
 	}
 
 	// Don't output a '?' character when the query string is empty, this is
 	// a more natural way of reading URLs.
-	if len(r.query) != 0 {
+	query := r.sanitizer.Query(r.query)
+	if len(query) != 0 {
 		fmt = append(fmt, "?%{query}s"...)
-		arg = append(arg, convS2E(&r.query))
+		arg = append(arg, convS2E(&query))
 	}
 
 	// Same than with the query string, don't output a '#' character when
@@ -148,9 +152,10 @@ var requestPool = sync.Pool{
 
 func newRequest() *request {
 	return &request{
-		fmtbuf: make([]byte, 0, 64),
-		logbuf: make([]byte, 0, 128),
-		argbuf: make([]interface{}, 0, 10),
+		fmtbuf:    make([]byte, 0, 64),
+		logbuf:    make([]byte, 0, 128),
+		argbuf:    make([]interface{}, 0, 10),
+		sanitizer: DefaultLogSanitizer,
 	}
 }
 
