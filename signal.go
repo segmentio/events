@@ -139,7 +139,7 @@ func (s *signalCtx) cancel(err error) {
 
 // IsSignal returns true if the given error is a *SignalError that was
 // generated upon receipt of one of the given signals. If no signal is
-// passed, the function only tests for err to be of type *SginalError.
+// passed, the function only tests for err to be of type *SignalError.
 func IsSignal(err error, signals ...os.Signal) bool {
 	if e, ok := err.(*SignalError); ok {
 		if len(signals) == 0 {

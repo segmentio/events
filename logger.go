@@ -14,11 +14,17 @@ import (
 var DefaultLogger = NewLogger(nil)
 
 // Log emits a log event to the default logger.
+//
+// Deprecated: Use the log/slog standard library package (or Segment internal,
+// github.com/segmentio/log).
 func Log(format string, args ...interface{}) {
 	DefaultLogger.log(1, false, format, args...)
 }
 
 // Debug emits a debug event to the default logger.
+//
+// Deprecated: Use the log/slog standard library package (or Segment internal,
+// github.com/segmentio/log).
 func Debug(format string, args ...interface{}) {
 	DefaultLogger.debug(1, format, args...)
 }
@@ -75,6 +81,9 @@ type Logger struct {
 }
 
 // NewLogger allocates and returns a new logger which sends events to handler.
+//
+// Deprecated: Use the log/slog standard library package (or Segment internal,
+// github.com/segmentio/log).
 func NewLogger(handler Handler) *Logger {
 	return &Logger{
 		Handler:      handler,
