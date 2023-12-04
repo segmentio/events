@@ -3,11 +3,9 @@ Go package for routing, formatting and publishing events produced by a program.
 
 ## Motivations
 
-While Go's standard log package is handy it lacks crucial features, like the
-ability to control the output format of the events for example. There are many
-packages that provides logger implementations for Go but they often expose
-complex APIs and were not designed to be efficient in terms of CPU and memory
-usage.
+**Most new code should use the new standard library log/slog package
+for logging. While this package won't go away, it may not see many new
+contributions.**
 
 The events package attempts to address these problems by providing high level
 abstractions with highly efficient implementations. But it also goes further,
