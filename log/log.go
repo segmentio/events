@@ -9,6 +9,7 @@ import (
 	"github.com/segmentio/events/v2"
 	"github.com/segmentio/events/v2/ecslogs"
 	"github.com/segmentio/events/v2/text"
+	"golang.org/x/term"
 )
 
 // New creates a new Logger. The out variable sets the destination to which log
@@ -30,7 +31,7 @@ func NewLogger(prefix string, flags int, handler events.Handler) *log.Logger {
 // If w is nil the function returns nil (which a logger interprets as using the
 // default handler).
 func NewHandler(w io.Writer) events.Handler {
-	var term bool
+	var isTerminal bool
 
 	if w == nil {
 		return nil
@@ -39,10 +40,10 @@ func NewHandler(w io.Writer) events.Handler {
 	if f, ok := w.(interface {
 		Fd() uintptr
 	}); ok {
-		term = events.IsTerminal(int(f.Fd()))
+		isTerminal = term.IsTerminal(int(f.Fd()))
 	}
 
-	if term {
+	if isTerminal {
 		return text.NewHandler("", w)
 	}
 	return ecslogs.NewHandler(w)
