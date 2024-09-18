@@ -42,7 +42,10 @@ func (h *Handler) HandleEvent(e *events.Event) {
 	f.buffer.Reset()
 
 	f.level = "INFO"
-	f.time = e.Time
+	// It's not super realistic to expect more precise timestamps on a Unix
+	// server, and the additional fidelity doesn't help much either vs.
+	// cluttering up the log line
+	f.time = e.Time.Round(time.Microsecond)
 	f.message = e.Message
 	f.data.args = e.Args
 	f.info.Source = e.Source
@@ -180,14 +183,14 @@ func (st stackTrace) MarshalJSON() ([]byte, error) {
 		pc := uintptr(frame)
 		file, line := events.SourceForPC(pc)
 		i++
-		fmt.Fprintf(b, `"%s:%d:%s"`, file, line, funcName(file, pc))
+		fmt.Fprintf(b, `"%s:%d:%s"`, file, line, funcName(pc))
 	}
 
 	b.WriteByte(']')
 	return b.Bytes(), nil
 }
 
-func funcName(file string, pc uintptr) string {
+func funcName(pc uintptr) string {
 	callers := [1]uintptr{pc}
 	frames := runtime.CallersFrames(callers[:])
 	f, _ := frames.Next()
